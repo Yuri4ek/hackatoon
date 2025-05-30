@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Помощь - NutriPlan{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-5">Центр помощи</h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="#getting-started" class="list-group-item list-group-item-action">
+                    <i class="fas fa-play-circle"></i> Начало работы
+                </a>
+                <a href="#profile-setup" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-cog"></i> Настройка профиля
+                </a>
+                <a href="#meal-planning" class="list-group-item list-group-item-action">
+                    <i class="fas fa-calendar-alt"></i> Планирование питания
+                </a>
+                <a href="#nutrition-tracking" class="list-group-item list-group-item-action">
+                    <i class="fas fa-chart-pie"></i> Отслеживание питания
+                </a>
+                <a href="#troubleshooting" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tools"></i> Решение проблем
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div id="getting-started" class="mb-5">
+                <h4><i class="fas fa-play-circle text-primary"></i> Начало работы</h4>
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Шаг 1: Регистрация</h6>
+                        <p>Создайте аккаунт, указав имя пользователя, email и пароль.</p>
+                        
+                        <h6>Шаг 2: Заполнение профиля</h6>
+                        <p>Укажите свои параметры для получения персональных рекомендаций.</p>
+                        
+                        <h6>Шаг 3: Первый план питания</h6>
+                        <p>Начните с планирования питания на сегодня или завтра.</p>
+                        
+                        <h6>Шаг 4: Отслеживание</h6>
+                        <p>Записывайте что едите и отслеживайте прогресс.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="profile-setup" class="mb-5">
+                <h4><i class="fas fa-user-cog text-success"></i> Настройка профиля</h4>
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Основные параметры</h6>
+                        <ul>
+                            <li><strong>Пол:</strong> Влияет на расчет базового метаболизма</li>
+                            <li><strong>Возраст:</strong> Учитывается в формуле расчета калорий</li>
+                            <li><strong>Вес и рост:</strong> Основа для расчета ИМТ и калорий</li>
+                        </ul>
+                        
+                        <h6>Уровень активности</h6>
+                        <ul>
+                            <li><strong>Малоподвижный:</strong> Офисная работа, мало движения</li>
+                            <li><strong>Легкая активность:</strong> 1-3 тренировки в неделю</li>
+                            <li><strong>Умеренная:</strong> 3-5 тренировок в неделю</li>
+                            <li><strong>Высокая:</strong> 6-7 тренировок в неделю</li>
+                            <li><strong>Очень высокая:</strong> 2 тренировки в день</li>
+                        </ul>
+                        
+                        <h6>Цели</h6>
+                        <ul>
+                            <li><strong>Похудение:</strong> Дефицит калорий 300-500 ккал</li>
+                            <li><strong>Поддержание:</strong> Калории равны расходу</li>
+                            <li><strong>Набор массы:</strong> Профицит калорий 300-500 ккал</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="meal-planning" class="mb-5">
+                <h4><i class="fas fa-calendar-alt text-warning"></i> Планирование питания</h4>
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Как планировать питание</h6>
+                        <ol>
+                            <li>Выберите дату в календаре</li>
+                            <li>Добавьте блюда для каждого приема пищи</li>
+                            <li>Укажите калории и БЖУ</li>
+                            <li>Следите за общим балансом дня</li>
+                        </ol>
+                        
+                        <h6>Советы по планированию</h6>
+                        <ul>
+                            <li>Планируйте на неделю вперед</li>
+                            <li>Учитывайте свой распорядок дня</li>
+                            <li>Оставляйте место для перекусов</li>
+                            <li>Балансируйте БЖУ в течение дня</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="nutrition-tracking" class="mb-5">
+                <h4><i class="fas fa-chart-pie text-info"></i> Отслеживание питания</h4>
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Как добавлять записи</h6>
+                        <ol>
+                            <li>Перейдите в раздел "Анализ рациона"</li>
+                            <li>Нажмите "Добавить запись о питании"</li>
+                            <li>Укажите название продукта/блюда</li>
+                            <li>Выберите прием пищи</li>
+                            <li>Введите калории и БЖУ</li>
+                        </ol>
+                        
+                        <h6>Где найти информацию о калориях</h6>
+                        <ul>
+                            <li>Этикетки на упаковках продуктов</li>
+                            <li>Таблицы калорийности в интернете</li>
+                            <li>Мобильные приложения-счетчики</li>
+                            <li>Наша база знаний</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="troubleshooting" class="mb-5">
+                <h4><i class="fas fa-tools text-danger"></i> Решение проблем</h4>
+                <div class="card">
+                    <div class="card-body">
+                        <h6>Частые проблемы и решения</h6>
+                        
+                        <div class="mb-3">
+                            <strong>Не могу войти в аккаунт</strong>
+                            <ul class="small">
+                                <li>Проверьте правильность ввода логина и пароля</li>
+                                <li>Убедитесь, что Caps Lock выключен</li>
+                                <li>Попробуйте очистить кэш браузера</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Неточные расчеты калорий</strong>
+                            <ul class="small">
+                                <li>Проверьте правильность данных в профиле</li>
+                                <li>Убедитесь, что указан корректный уровень активности</li>
+                                <li>Помните, что это приблизительные расчеты</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Не отображаются графики</strong>
+                            <ul class="small">
+                                <li>Обновите страницу</li>
+                                <li>Проверьте подключение к интернету</li>
+                                <li>Попробуйте другой браузер</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>Не нашли решение?</strong><br>
+                            Обратитесь в службу поддержки через 
+                            <a href="{{ url_for('contact') }}">форму обратной связи</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

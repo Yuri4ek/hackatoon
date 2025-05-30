@@ -1,128 +1,356 @@
 {% extends "base.html" %}
 
-{% block title %}Профиль - Планировщик питания{% endblock %}
+{% block title %}Профиль - NutriPlan{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4><i class="fas fa-user me-2"></i>Персональный профиль</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="row">
-                            <div class="col-md-6">
+        <div class="col-md-3 sidebar p-3">
+            <h5 class="mb-3">Навигация</h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Панель управления
+                </a>
+                <a class="nav-link active" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user"></i> Профиль
+                </a>
+                <a class="nav-link" href="{{ url_for('meal_planner') }}">
+                    <i class="fas fa-calendar-alt"></i> Планировщик питания
+                </a>
+                <a class="nav-link" href="{{ url_for('nutrition_analysis') }}">
+                    <i class="fas fa-chart-pie"></i> Анализ рациона
+                </a>
+                <a class="nav-link" href="{{ url_for('change_password') }}">
+                    <i class="fas fa-key"></i> Изменить пароль
+                </a>
+            </nav>
+        </div>
+        
+        <div class="col-md-9 p-4">
+            <h2 class="mb-4">Персональный профиль</h2>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-user-edit"></i> Основная информация</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="name" class="form-label">
+                                                <i class="fas fa-user text-primary"></i> Полное имя
+                                            </label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="name" 
+                                                   name="name" 
+                                                   value="{{ current_user.name or '' }}"
+                                                   placeholder="Введите ваше имя">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="age" class="form-label">
+                                                <i class="fas fa-birthday-cake text-primary"></i> Возраст
+                                            </label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="age" 
+                                                   name="age" 
+                                                   value="{{ current_user.age or '' }}" 
+                                                   min="10" 
+                                                   max="100"
+                                                   placeholder="Лет">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="gender" class="form-label">
+                                                <i class="fas fa-venus-mars text-primary"></i> Пол
+                                            </label>
+                                            <select class="form-select" id="gender" name="gender">
+                                                <option value="">Выберите пол</option>
+                                                <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>
+                                                    Мужской
+                                                </option>
+                                                <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>
+                                                    Женский
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="weight" class="form-label">
+                                                <i class="fas fa-weight text-primary"></i> Вес (кг)
+                                            </label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="weight" 
+                                                   name="weight" 
+                                                   value="{{ current_user.weight or '' }}" 
+                                                   step="0.1" 
+                                                   min="30" 
+                                                   max="300"
+                                                   placeholder="Например: 70.5">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="height" class="form-label">
+                                                <i class="fas fa-ruler-vertical text-primary"></i> Рост (см)
+                                            </label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="height" 
+                                                   name="height" 
+                                                   value="{{ current_user.height or '' }}" 
+                                                   step="0.1"
+                                                   min="100" 
+                                                   max="250"
+                                                   placeholder="Например: 175">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="activity_level" class="form-label">
+                                                <i class="fas fa-running text-primary"></i> Уровень активности
+                                            </label>
+                                            <select class="form-select" id="activity_level" name="activity_level">
+                                                <option value="">Выберите уровень активности</option>
+                                                <option value="sedentary" {% if current_user.activity_level == 'sedentary' %}selected{% endif %}>
+                                                    Малоподвижный (офисная работа)
+                                                </option>
+                                                <option value="light" {% if current_user.activity_level == 'light' %}selected{% endif %}>
+                                                    Легкая активность (1-3 тренировки в неделю)
+                                                </option>
+                                                <option value="moderate" {% if current_user.activity_level == 'moderate' %}selected{% endif %}>
+                                                    Умеренная активность (3-5 тренировок в неделю)
+                                                </option>
+                                                <option value="active" {% if current_user.activity_level == 'active' %}selected{% endif %}>
+                                                    Высокая активность (6-7 тренировок в неделю)
+                                                </option>
+                                                <option value="very_active" {% if current_user.activity_level == 'very_active' %}selected{% endif %}>
+                                                    Очень высокая активность (2 тренировки в день)
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div class="mb-3">
-                                    <label for="gender" class="form-label">Пол</label>
-                                    <select class="form-select" id="gender" name="gender" required>
-                                        <option value="">Выберите пол</option>
-                                        <option value="male" {% if user and user[4] == 'male' %}selected{% endif %}>Мужской</option>
-                                        <option value="female" {% if user and user[4] == 'female' %}selected{% endif %}>Женский</option>
+                                    <label for="goal" class="form-label">
+                                        <i class="fas fa-target text-primary"></i> Цель
+                                    </label>
+                                    <select class="form-select" id="goal" name="goal">
+                                        <option value="">Выберите цель</option>
+                                        <option value="weight_loss" {% if current_user.goal == 'weight_loss' %}selected{% endif %}>
+                                            Похудение
+                                        </option>
+                                        <option value="maintenance" {% if current_user.goal == 'maintenance' %}selected{% endif %}>
+                                            Поддержание веса
+                                        </option>
+                                        <option value="muscle_gain" {% if current_user.goal == 'muscle_gain' %}selected{% endif %}>
+                                            Набор мышечной массы
+                                        </option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
+                                
                                 <div class="mb-3">
-                                    <label for="age" class="form-label">Возраст</label>
-                                    <input type="number" class="form-control" id="age" name="age" 
-                                           value="{{ user[5] if user and user[5] else '' }}" min="10" max="100" required>
+                                    <label class="form-label">
+                                        <i class="fas fa-ban text-primary"></i> Диетические ограничения
+                                    </label>
+                                    <div class="row">
+                                        {% set user_restrictions = current_user.get_dietary_restrictions_list() %}
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="vegetarian" 
+                                                       id="vegetarian"
+                                                       {% if 'vegetarian' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="vegetarian">
+                                                    Вегетарианство
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="vegan" 
+                                                       id="vegan"
+                                                       {% if 'vegan' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="vegan">
+                                                    Веганство
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="gluten_free" 
+                                                       id="gluten_free"
+                                                       {% if 'gluten_free' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="gluten_free">
+                                                    Без глютена
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="lactose_free" 
+                                                       id="lactose_free"
+                                                       {% if 'lactose_free' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="lactose_free">
+                                                    Без лактозы
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="keto" 
+                                                       id="keto"
+                                                       {% if 'keto' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="keto">
+                                                    Кето-диета
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="paleo" 
+                                                       id="paleo"
+                                                       {% if 'paleo' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="paleo">
+                                                    Палео-диета
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="halal" 
+                                                       id="halal"
+                                                       {% if 'halal' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="halal">
+                                                    Халяль
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="dietary_restrictions" 
+                                                       value="kosher" 
+                                                       id="kosher"
+                                                       {% if 'kosher' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="kosher">
+                                                    Кошер
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="weight" class="form-label">Вес (кг)</label>
-                                    <input type="number" step="0.1" class="form-control" id="weight" name="weight" 
-                                           value="{{ user[6] if user and user[6] else '' }}" min="30" max="300" required>
+                                
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Сохранить изменения
+                                    </button>
+                                    <a href="{{ url_for('change_password') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-key"></i> Изменить пароль
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="height" class="form-label">Рост (см)</label>
-                                    <input type="number" class="form-control" id="height" name="height" 
-                                           value="{{ user[7] if user and user[7] else '' }}" min="100" max="250" required>
-                                </div>
-                            </div>
+                            </form>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="activity_level" class="form-label">Уровень активности</label>
-                            <select class="form-select" id="activity_level" name="activity_level" required>
-                                <option value="">Выберите уровень активности</option>
-                                <option value="sedentary" {% if user and user[8] == 'sedentary' %}selected{% endif %}>
-                                    Малоподвижный (офисная работа)
-                                </option>
-                                <option value="light" {% if user and user[8] == 'light' %}selected{% endif %}>
-                                    Легкая активность (1-3 тренировки в неделю)
-                                </option>
-                                <option value="moderate" {% if user and user[8] == 'moderate' %}selected{% endif %}>
-                                    Умеренная активность (3-5 тренировок в неделю)
-                                </option>
-                                <option value="active" {% if user and user[8] == 'active' %}selected{% endif %}>
-                                    Высокая активность (6-7 тренировок в неделю)
-                                </option>
-                                <option value="very_active" {% if user and user[8] == 'very_active' %}selected{% endif %}>
-                                    Очень высокая активность (2 тренировки в день)
-                                </option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="goal" class="form-label">Цель</label>
-                            <select class="form-select" id="goal" name="goal" required>
-                                <option value="">Выберите цель</option>
-                                <option value="lose_weight" {% if user and user[9] == 'lose_weight' %}selected{% endif %}>
-                                    Похудение
-                                </option>
-                                <option value="gain_weight" {% if user and user[9] == 'gain_weight' %}selected{% endif %}>
-                                    Набор массы
-                                </option>
-                                <option value="maintain" {% if user and user[9] == 'maintain' %}selected{% endif %}>
-                                    Поддержание формы
-                                </option>
-                            </select>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Сохранить изменения
-                        </button>
-                    </form>
+                    </div>
                 </div>
-            </div>
-            
-            {% if user and user[4] and user[5] and user[6] and user[7] %}
-            <div class="card mt-4 shadow">
-                <div class="card-header bg-info text-white">
-                    <h5><i class="fas fa-calculator me-2"></i>Ваши показатели</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-3">
-                            <h6>ИМТ</h6>
-                            <span class="badge bg-primary fs-6">
-                                {{ "%.1f"|format(user[6] / ((user[7]/100) ** 2)) }}
-                            </span>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-calculator"></i> Ваши показатели</h5>
                         </div>
-                        <div class="col-md-3">
-                            <h6>Возраст</h6>
-                            <span class="badge bg-success fs-6">{{ user[5] }} лет</span>
-                        </div>
-                        <div class="col-md-3">
-                            <h6>Вес</h6>
-                            <span class="badge bg-warning fs-6">{{ user[6] }} кг</span>
-                        </div>
-                        <div class="col-md-3">
-                            <h6>Рост</h6>
-                            <span class="badge bg-info fs-6">{{ user[7] }} см</span>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Email:</strong>
+                                <div class="text-muted">{{ current_user.email }}</div>
+                            </div>
+                            
+                            {% if current_user.calculate_bmr() %}
+                            <div class="mb-3">
+                                <strong>Суточная норма калорий:</strong>
+                                <div class="h4 text-primary">{{ "%.0f"|format(current_user.calculate_bmr()) }} ккал</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if current_user.weight and current_user.height %}
+                            {% set bmi = current_user.weight / ((current_user.height / 100) ** 2) %}
+                            <div class="mb-3">
+                                <strong>Индекс массы тела (ИМТ):</strong>
+                                <div class="h5 
+                                    {% if bmi < 18.5 %}text-info
+                                    {% elif bmi < 25 %}text-success
+                                    {% elif bmi < 30 %}text-warning
+                                    {% else %}text-danger{% endif %}">
+                                    {{ "%.1f"|format(bmi) }}
+                                </div>
+                                <small class="text-muted">
+                                    {% if bmi < 18.5 %}Недостаточный вес
+                                    {% elif bmi < 25 %}Нормальный вес
+                                    {% elif bmi < 30 %}Избыточный вес
+                                    {% else %}Ожирение{% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if current_user.get_dietary_restrictions_list() %}
+                            <div class="mb-3">
+                                <strong>Диетические ограничения:</strong>
+                                <div class="mt-2">
+                                    {% for restriction in current_user.get_dietary_restrictions_list() %}
+                                    <span class="badge bg-secondary me-1">
+                                        {% if restriction == 'vegetarian' %}Вегетарианство
+                                        {% elif restriction == 'vegan' %}Веганство
+                                        {% elif restriction == 'gluten_free' %}Без глютена
+                                        {% elif restriction == 'lactose_free' %}Без лактозы
+                                        {% elif restriction == 'keto' %}Кето
+                                        {% elif restriction == 'paleo' %}Палео
+                                        {% elif restriction == 'halal' %}Халяль
+                                        {% elif restriction == 'kosher' %}Кошер
+                                        {% else %}{{ restriction }}{% endif %}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="alert alert-info">
+                                <small>
+                                    <i class="fas fa-info-circle"></i>
+                                    Заполните все поля профиля для получения персональных рекомендаций
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>

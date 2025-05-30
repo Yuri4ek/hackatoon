@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Контакты - NutriPlan{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-5">Свяжитесь с нами</h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-envelope"></i> Обратная связь</h5>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Имя</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Тема</label>
+                            <select class="form-select" id="subject">
+                                <option>Вопрос по использованию</option>
+                                <option>Предложение по улучшению</option>
+                                <option>Техническая проблема</option>
+                                <option>Сотрудничество</option>
+                                <option>Другое</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Сообщение</label>
+                            <textarea class="form-control" id="message" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Отправить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="fas fa-info-circle"></i> Контактная информация</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6><i class="fas fa-envelope text-primary"></i> Email</h6>
+                        <p>info@nutriplan.ru<br>support@nutriplan.ru</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6><i class="fas fa-phone text-success"></i> Телефон</h6>
+                        <p>+7 (999) 123-45-67<br>Пн-Пт: 9:00-18:00 (МСК)</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6><i class="fas fa-map-marker-alt text-danger"></i> Адрес</h6>
+                        <p>г. Москва, ул. Примерная, д. 123<br>офис 456</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6><i class="fas fa-share-alt text-info"></i> Социальные сети</h6>
+                        <div class="d-flex gap-3">
+                            <a href="#" class="btn btn-outline-primary btn-sm">
+                                <i class="fab fa-vk"></i> VK
+                            </a>
+                            <a href="#" class="btn btn-outline-info btn-sm">
+                                <i class="fab fa-telegram"></i> Telegram
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <small>
+                            <i class="fas fa-clock"></i>
+                            Мы отвечаем на сообщения в течение 24 часов в рабочие дни
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

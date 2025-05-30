@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Анализ рациона - NutriPlan{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 sidebar p-3">
+            <h5 class="mb-3">Навигация</h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Панель управления
+                </a>
+                <a class="nav-link" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user"></i> Профиль
+                </a>
+                <a class="nav-link" href="{{ url_for('meal_planner') }}">
+                    <i class="fas fa-calendar-alt"></i> Планировщик питания
+                </a>
+                <a class="nav-link active" href="{{ url_for('nutrition_analysis') }}">
+                    <i class="fas fa-chart-pie"></i> Анализ рациона
+                </a>
+            </nav>
+        </div>
+        
+        <div class="col-md-9 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Анализ рациона</h2>
+                <div>
+                    <input type="date" class="form-control" id="dateSelector" 
+                           value="{{ selected_date.isoformat() }}" 
+                           onchange="window.location.href='{{ url_for('nutrition_analysis') }}?date=' + this.value">
+                </div>
+            </div>
+            
+            <!-- Калькулятор калорий -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-calculator"></i> Калькулятор калорий и БЖУ</h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFoodModal">
+                                <i class="fas fa-plus"></i> Добавить запись о питании
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Статистика дня -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">{{ "%.0f"|format(total_calories) }}</h3>
+                            <p class="mb-0">Калории</p>
+                            <small class="text-muted">из {{ "%.0f"|format(target_calories) }}</small>
+                            <div class="progress mt-2">
+                                <div class="progress-bar" style="width: {{ (total_calories / target_calories * 100) if target_calories > 0 else 0 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-success">{{ "%.1f"|format(total_protein) }}г</h3>
+                            <p class="mb-0">Белки</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-warning">{{ "%.1f"|format(total_carbs) }}г</h3>
+                            <p class="mb-0">Углеводы</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-info">{{ "%.1f"|format(total_fat) }}г</h3>
+                            <p class="mb-0">Жиры</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Визуализация и записи -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-doughnut"></i> Распределение БЖУ</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="nutritionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-list"></i> Записи о питании</h5>
+                        </div>
+                        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                            {% if entries %}
+                                {% for entry in entries %}
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                    <div>
+                                        <strong>{{ entry.food_name }}</strong>
+                                        <div class="small text-muted">
+                                            {{ entry.meal_type }} | {{ "%.0f"|format(entry.calories) }} ккал
+                                            {% if entry.protein %} | Б: {{ "%.1f"|format(entry.protein) }}г{% endif %}
+                                            {% if entry.carbs %} | У: {{ "%.1f"|format(entry.carbs) }}г{% endif %}
+                                            {% if entry.fat %} | Ж: {{ "%.1f"|format(entry.fat) }}г{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">Записи о питании на выбранную дату отсутствуют</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Рекомендации -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-lightbulb"></i> Рекомендации по питанию</h5>
+                        </div>
+                        <div class="card-body">
+                            {% set calorie_diff = total_calories - target_calories %}
+                            {% if calorie_diff > 200 %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Превышение калорий:</strong> Вы превысили дневную норму на {{ "%.0f"|format(calorie_diff) }} ккал. 
+                                    Рекомендуется увеличить физическую активность или скорректировать рацион на завтра.
+                                </div>
+                            {% elif calorie_diff < -200 %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Недостаток калорий:</strong> До дневной нормы не хватает {{ "%.0f"|format(-calorie_diff) }} ккал. 
+                                    Добавьте полезный перекус или увеличьте порции основных приемов пищи.
+                                </div>
+                            {% else %}
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    <strong>Отличный баланс!</strong> Ваш рацион соответствует дневной норме калорий.
+                                </div>
+                            {% endif %}
+                            
+                            {% if total_protein < 50 %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Недостаток белка:</strong> Рекомендуется добавить в рацион больше белковых продуктов 
+                                    (мясо, рыба, яйца, бобовые, творог).
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления записи о питании -->
+<div class="modal fade" id="addFoodModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить запись о питании</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('add_food_entry') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="date" value="{{ selected_date.isoformat() }}">
+                    
+                    <div class="mb-3">
+                        <label for="food_name" class="form-label">Название продукта/блюда</label>
+                        <input type="text" class="form-control" name="food_name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="meal_type" class="form-label">Прием пищи</label>
+                        <select class="form-select" name="meal_type" required>
+                            <option value="breakfast">Завтрак</option>
+                            <option value="lunch">Обед</option>
+                            <option value="dinner">Ужин</option>
+                            <option value="snack">Перекус</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="calories" class="form-label">Калории</label>
+                                <input type="number" class="form-control" name="calories" step="0.1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="protein" class="form-label">Белки (г)</label>
+                                <input type="number" class="form-control" name="protein" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="carbs" class="form-label">Углеводы (г)</label>
+                                <input type="number" class="form-control" name="carbs" step="0.1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fat" class="form-label">Жиры (г)</label>
+                                <input type="number" class="form-control" name="fat" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// График распределения БЖУ
+const nutritionCtx = document.getElementById('nutritionChart').getContext('2d');
+new Chart(nutritionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Белки', 'Углеводы', 'Жиры'],
+        datasets: [{
+            data: [{{ total_protein }}, {{ total_carbs }}, {{ total_fat }}],
+            backgroundColor: ['#28a745', '#ffc107', '#17a2b8']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

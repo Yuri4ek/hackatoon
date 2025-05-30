@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}О нас - NutriPlan{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-5">О проекте NutriPlan</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-body p-5">
+                    <h4 class="mb-4">Наша миссия</h4>
+                    <p class="lead">
+                        NutriPlan создан для того, чтобы сделать здоровое питание простым,
+                        доступным и персонализированным для каждого пользователя.
+                    </p>
+
+                    <h5 class="mt-4 mb-3">Что мы предлагаем:</h5>
+                    <ul>
+                        <li>Персональные планы питания на основе ваших целей</li>
+                        <li>Точный подсчет калорий и макронутриентов</li>
+                        <li>Научно обоснованные рекомендации по питанию</li>
+                        <li>Удобные инструменты для отслеживания прогресса</li>
+                        <li>Образовательный контент о здоровом образе жизни</li>
+                    </ul>
+
+                    <h5 class="mt-4 mb-3">Наши принципы:</h5>
+                    <ul>
+                        <li><strong>Научный подход:</strong> Все рекомендации основаны на современных исследованиях</li>
+                        <li><strong>Индивидуальность:</strong> Учитываем особенности каждого пользователя</li>
+                        <li><strong>Простота:</strong> Сложные вещи объясняем простым языком</li>
+                        <li><strong>Безопасность:</strong> Ваши данные надежно защищены</li>
+                    </ul>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                            Присоединиться к NutriPlan
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

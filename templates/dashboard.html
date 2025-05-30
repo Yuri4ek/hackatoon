@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Панель управления - NutriPlan{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 sidebar p-3">
+            <h5 class="mb-3">Навигация</h5>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Панель управления
+                </a>
+                <a class="nav-link" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user"></i> Профиль
+                </a>
+                <a class="nav-link" href="{{ url_for('meal_planner') }}">
+                    <i class="fas fa-calendar-alt"></i> Планировщик питания
+                </a>
+                <a class="nav-link" href="{{ url_for('nutrition_analysis') }}">
+                    <i class="fas fa-chart-pie"></i> Анализ рациона
+                </a>
+            </nav>
+        </div>
+        
+        <div class="col-md-9 p-4">
+            <h2 class="mb-4">Добро пожаловать, {{ current_user.username }}!</h2>
+            
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">{{ "%.0f"|format(total_calories) }}</h3>
+                            <p class="mb-0">Калории сегодня</p>
+                            <small class="text-muted">из {{ "%.0f"|format(target_calories) }}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-success">{{ "%.1f"|format(total_protein) }}г</h3>
+                            <p class="mb-0">Белки</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-warning">{{ "%.1f"|format(total_carbs) }}г</h3>
+                            <p class="mb-0">Углеводы</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="text-info">{{ "%.1f"|format(total_fat) }}г</h3>
+                            <p class="mb-0">Жиры</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-doughnut"></i> Распределение БЖУ</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="macroChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-list"></i> Сегодняшние приемы пищи</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if today_entries %}
+                                {% for entry in today_entries %}
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                    <div>
+                                        <strong>{{ entry.food_name }}</strong>
+                                        <small class="text-muted d-block">{{ entry.meal_type }}</small>
+                                    </div>
+                                    <span class="badge bg-primary">{{ "%.0f"|format(entry.calories) }} ккал</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">Записи о питании на сегодня отсутствуют</p>
+                            {% endif %}
+                            
+                            <div class="mt-3">
+                                <a href="{{ url_for('nutrition_analysis') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Добавить запись
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line"></i> Прогресс калорий за неделю</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// График распределения БЖУ
+const macroCtx = document.getElementById('macroChart').getContext('2d');
+new Chart(macroCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Белки', 'Углеводы', 'Жиры'],
+        datasets: [{
+            data: [{{ total_protein }}, {{ total_carbs }}, {{ total_fat }}],
+            backgroundColor: ['#28a745', '#ffc107', '#17a2b8']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// График калорий за неделю
+fetch('/api/nutrition_data?days=7')
+    .then(response => response.json())
+    .then(data => {
+        const dates = Object.keys(data).sort();
+        const calories = dates.map(date => data[date].calories);
+        
+        const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+        new Chart(weeklyCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Калории',
+                    data: calories,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

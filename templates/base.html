@@ -3,70 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Планировщик питания{% endblock %}</title>
+    <title>{% block title %}NutriPlan - Персональный планировщик питания{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --primary-color: #28a745;
+            --secondary-color: #20c997;
+            --accent-color: #ffc107;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+
         .hero-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             padding: 100px 0;
         }
+
         .feature-card {
             transition: transform 0.3s;
             border: none;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+
         .feature-card:hover {
             transform: translateY(-5px);
         }
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.5rem;
+
+        .stats-card {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-left: 4px solid var(--primary-color);
         }
-        .nutrition-chart {
-            max-width: 400px;
-            margin: 0 auto;
+
+        .sidebar {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 56px);
+        }
+
+        .sidebar .nav-link {
+            color: #495057;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 2px 0;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-utensils me-2"></i>NutriPlan
+                <i class="fas fa-leaf"></i> NutriPlan
             </a>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">Главная</a>
                     </li>
-                    {% if session.user_id %}
+                    {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('profile') }}">Профиль</a>
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">Панель управления</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('planner') }}">Планировщик</a>
+                        <a class="nav-link" href="{{ url_for('meal_planner') }}">Планировщик питания</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('analysis') }}">Анализ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('recipes') }}">Рецепты</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('knowledge') }}">База знаний</a>
+                        <a class="nav-link" href="{{ url_for('nutrition_analysis') }}">Анализ рациона</a>
                     </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('knowledge_base') }}">База знаний</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('lifestyle_tips') }}">Советы</a>
+                    </li>
                 </ul>
+
                 <ul class="navbar-nav">
-                    {% if session.user_id %}
+                    {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user me-1"></i>{{ session.username }}
+                            <i class="fas fa-user"></i> {{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('profile') }}">Профиль</a></li>
@@ -79,7 +127,7 @@
                         <a class="nav-link" href="{{ url_for('login') }}">Войти</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('register') }}">Регистрация</a>
+                        <a class="btn btn-primary ms-2" href="{{ url_for('register') }}">Регистрация</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -87,40 +135,38 @@
         </div>
     </nav>
 
-    <main>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="container mt-3">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
-        {% block content %}{% endblock %}
-    </main>
+    {% block content %}{% endblock %}
 
     <footer class="bg-dark text-light py-4 mt-5">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5>NutriPlan</h5>
-                    <p>Ваш персональный помощник в планировании здорового питания.</p>
+                    <h5><i class="fas fa-leaf"></i> NutriPlan</h5>
+                    <p>Ваш персональный помощник в планировании здорового питания</p>
                 </div>
                 <div class="col-md-6">
-                    <h5>Контакты</h5>
-                    <p>Email: info@nutriplan.ru<br>Телефон: +7 (999) 123-45-67</p>
+                    <h6>Контакты</h6>
+                    <p>Email: info@nutriplan.ru<br>
+                    Телефон: +7 (999) 123-45-67</p>
                 </div>
             </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
