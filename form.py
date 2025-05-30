@@ -50,4 +50,5 @@ class RegisterForm(FlaskForm):
             "набор массы"
         ],
     )
+    dietary_restrictions = TextAreaField("Ограничения", validators=[DataRequired()])
     submit = SubmitField("Зарегистрироваться")
