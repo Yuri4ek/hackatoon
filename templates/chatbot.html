@@ -5,30 +5,6 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-3 sidebar p-3">
-            <h5 class="mb-3">Навигация</h5>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="{{ url_for('dashboard') }}">
-                    <i class="fas fa-tachometer-alt"></i> Панель управления
-                </a>
-                <a class="nav-link" href="{{ url_for('profile') }}">
-                    <i class="fas fa-user"></i> Профиль
-                </a>
-                <a class="nav-link" href="{{ url_for('meal_planner') }}">
-                    <i class="fas fa-calendar-alt"></i> Планировщик питания
-                </a>
-                <a class="nav-link" href="{{ url_for('nutrition_analysis') }}">
-                    <i class="fas fa-chart-pie"></i> Анализ рациона
-                </a>
-                <a class="nav-link" href="{{ url_for('chat') }}">
-                    <i class="fas fa-comments"></i> Чат с консультантом
-                </a>
-                <a class="nav-link active" href="{{ url_for('chatbot') }}">
-                    <i class="fas fa-robot"></i> Чат-бот
-                </a>
-            </nav>
-        </div>
-        
         <div class="col-md-9 p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-robot text-primary"></i> Чат-бот NutriPlan</h2>
@@ -97,7 +73,6 @@
                                 <div class="message user-message">
                                     <div class="message-content">
                                         <div class="message-text">{{ msg.message }}</div>
-                                        <div class="message-time">{{ msg.created_at.strftime('%H:%M') }}</div>
                                     </div>
                                     <div class="message-avatar">
                                         <i class="fas fa-user"></i>
@@ -110,7 +85,6 @@
                                     </div>
                                     <div class="message-content">
                                         <div class="message-text">{{ msg.response }}</div>
-                                        <div class="message-time">{{ msg.created_at.strftime('%H:%M') }}</div>
                                     </div>
                                 </div>
                                 {% endfor %}

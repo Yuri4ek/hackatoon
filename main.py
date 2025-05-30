@@ -70,7 +70,8 @@ def utility_processor():
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
-    return db_sess.query(User).get(user_id)
+    # Современный способ (SQLAlchemy 2.0 style)
+    return db_sess.get(User, user_id)
 
 
 # Маршруты
@@ -158,7 +159,7 @@ def dashboard():
                            today_entries=today_entries)
 
 
-def answer_bennedict(age, gender, weight, height, activity, goal): #Подсчет кол.
+def answer_bennedict(age, gender, weight, height, activity, goal):  # Подсчет кол.
     bmr = 88.36 + (13.4 * weight) + (4.8 * height) - (5.7 * age) if gender == 'мужчина' else 447.6 + (9.2 * weight) + (
             3.1 * height) - (4.3 * age)
     activityes = {
@@ -324,26 +325,27 @@ def nutrition_data():
     return jsonify(daily_data)
 
 
-def generate_chatbot_response(message, user):
+def get_ai_answer(text, age, gender, weight, height, activity, goal, dietary):
     api_key = "NmU2ZTUyODAtNjRjYS00MzkwLWI0NjItNGZjNzBlNzQ1MzliOjNkNTBjNzk5LWEzMDgtNDZlZS04Mzg1LWY2N2M2NTc5NmRhNQ=="
 
-    def get_ai_answer(text, age, gender, weight, height, activity, goal, dietary):
-        text += f", {age} лет, {gender}, вес {weight} кг, рост {height} см, {activity}, цель - {goal}, противопоказания: {dietary}, пиши кратко, только то, что спросили"
+    text += f", {age} лет, {gender}, вес {weight} кг, рост {height} см, {activity}, цель - {goal}, противопоказания: {dietary}, пиши кратко, только то, что спросили"
 
-        giga = GigaChat(
-            credentials=api_key,
-            scope="GIGACHAT_API_PERS",  # Для физлиц (альтернативы: GIGACHAT_API_B2B/CORP)
-            verify_ssl_certs=False  # Отключение проверки сертификатов (не рекомендуется для прода)
-        )
+    giga = GigaChat(
+        credentials=api_key,
+        scope="GIGACHAT_API_PERS",  # Для физлиц (альтернативы: GIGACHAT_API_B2B/CORP)
+        verify_ssl_certs=False  # Отключение проверки сертификатов (не рекомендуется для прода)
+    )
 
-        response = giga.chat(text)
-        print(response.choices[0].message.content)
+    response = giga.chat(text)
+    return response.choices[0].message.content
 
-        print(f"Потрачено токенов: {response.usage.total_tokens}")
 
-    test_data = [message, user.age, user.gender, user.width, user.height, user.activity_level, user.goal, user.dietary_restrictions]
+def generate_chatbot_response(message, user):
+    test_data = [message, user.age, user.gender, user.weight, user.height, user.activity_level, user.goal,
+                 user.dietary_restrictions]
 
-    get_ai_answer(*test_data)
+    return get_ai_answer(*test_data)
+
 
 @app.route('/api/chatbot/history')
 @login_required
@@ -370,10 +372,8 @@ def chatbot_history():
 def chatbot():
     """Страница чат-бота"""
     # Получаем последние сообщения пользователя с чат-ботом
-    recent_messages = User_Query.query.filter_by(user_id=current_user.id) \
-        .order_by(User_Query.created_at.desc()) \
-        .limit(10).all()
-    recent_messages.reverse()  # Показываем в хронологическом порядке
+    db_sess = db_session.create_session()
+    recent_messages = db_sess.query(User_Query).filter(User_Query.user_id == current_user.id).all()
 
     return render_template('chatbot.html', recent_messages=recent_messages)
 
@@ -405,6 +405,8 @@ def send_message():
 @login_required
 def chatbot_api():
     """API для обработки сообщений чат-бота"""
+    db_sess = db_session.create_session()
+
     data = request.get_json()
     message = data.get('message', '').strip()
 
@@ -414,6 +416,7 @@ def chatbot_api():
     try:
         # Генерируем ответ чат-бота
         response = generate_chatbot_response(message, current_user)
+        print(response)
 
         # Сохраняем в базу данных
         chatbot_message = User_Query(
@@ -421,8 +424,8 @@ def chatbot_api():
             message=message,
             response=response
         )
-        User_Query.session.add(chatbot_message)
-        User_Query.session.commit()
+        db_sess.add(chatbot_message)
+        db_sess.commit()
 
         return jsonify({
             "message": message,
@@ -431,8 +434,8 @@ def chatbot_api():
         })
 
     except Exception as e:
-        User_Query.session.rollback()
         return jsonify({"error": "Произошла ошибка при обработке сообщения"}), 500
+
 
 def main():
     # Инициализация бд (указывать абсолютный путь при хостинге)
