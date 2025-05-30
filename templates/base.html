@@ -95,9 +95,6 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Главная</a>
-                    </li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard') }}">Панель управления</a>
@@ -168,11 +165,6 @@
                 <div class="col-md-6">
                     <h5><i class="fas fa-leaf"></i> NutriPlan</h5>
                     <p>Ваш персональный помощник в планировании здорового питания</p>
-                </div>
-                <div class="col-md-6">
-                    <h6>Контакты</h6>
-                    <p>Email: info@nutriplan.ru<br>
-                    Телефон: +7 (999) 123-45-67</p>
                 </div>
             </div>
         </div>
