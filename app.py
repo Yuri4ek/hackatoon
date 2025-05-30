@@ -7,74 +7,7 @@ import json
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
 
-# Инициализация базы данных
-def init_db():
-    conn = sqlite3.connect('nutrition.db')
-    c = conn.cursor()
-    
-    # Таблица пользователей
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  username TEXT UNIQUE NOT NULL,
-                  email TEXT UNIQUE NOT NULL,
-                  password TEXT NOT NULL,
-                  gender TEXT,
-                  age INTEGER,
-                  weight REAL,
-                  height REAL,
-                  activity_level TEXT,
-                  goal TEXT,
-                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-    
-    # Таблица планов питания
-    c.execute('''CREATE TABLE IF NOT EXISTS meal_plans
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  date TEXT,
-                  meal_type TEXT,
-                  food_name TEXT,
-                  calories INTEGER,
-                  protein REAL,
-                  carbs REAL,
-                  fat REAL,
-                  FOREIGN KEY (user_id) REFERENCES users (id))''')
-    
-    # Таблица рецептов
-    c.execute('''CREATE TABLE IF NOT EXISTS recipes
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  name TEXT NOT NULL,
-                  description TEXT,
-                  ingredients TEXT,
-                  instructions TEXT,
-                  calories_per_serving INTEGER,
-                  protein REAL,
-                  carbs REAL,
-                  fat REAL,
-                  prep_time INTEGER,
-                  diet_type TEXT,
-                  image_url TEXT)''')
-    
-    # Добавляем примеры рецептов
-    sample_recipes = [
-        ("Овсянка с ягодами", "Полезный завтрак с овсянкой и свежими ягодами", 
-         "Овсяные хлопья 50г, молоко 200мл, ягоды 100г, мед 1 ч.л.", 
-         "1. Сварить овсянку на молоке\n2. Добавить ягоды и мед", 
-         320, 12, 45, 8, 10, "Здоровое питание", "/static/images/oatmeal.jpg"),
-        ("Куриная грудка с овощами", "Белковое блюдо с овощами на пару", 
-         "Куриная грудка 150г, брокколи 100г, морковь 50г, оливковое масло 1 ч.л.", 
-         "1. Запечь курицу в духовке\n2. Приготовить овощи на пару", 
-         280, 35, 8, 6, 25, "Белковая диета", "/static/images/chicken.jpg"),
-        ("Греческий салат", "Свежий салат с сыром фета", 
-         "Помидоры 150г, огурцы 100г, сыр фета 50г, оливки 30г, оливковое масло 1 ст.л.", 
-         "1. Нарезать овощи\n2. Добавить сыр и оливки\n3. Заправить маслом", 
-         220, 8, 12, 18, 5, "Средиземноморская", "/static/images/greek_salad.jpg")
-    ]
-    
-    for recipe in sample_recipes:
-        c.execute("INSERT OR IGNORE INTO recipes (name, description, ingredients, instructions, calories_per_serving, protein, carbs, fat, prep_time, diet_type, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", recipe)
-    
-    conn.commit()
-    conn.close()
+#
 
 # Инициализируем БД при запуске
 init_db()

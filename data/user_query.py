@@ -5,7 +5,7 @@ from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
 
-class User(SqlAlchemyBase, UserMixin, SerializerMixin):
+class User_Query(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'user_queries'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
