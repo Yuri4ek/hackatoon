@@ -9,8 +9,6 @@ from flask_login import (
 from flask_restful import abort, Api
 
 from datetime import datetime, date, timedelta
-from form.forms import RegisterForm, LoginForm
-
 from data import db_session
 from data.user import User
 from data.user_query import User_Query
