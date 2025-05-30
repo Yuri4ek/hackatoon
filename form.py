@@ -10,12 +10,16 @@ from wtforms import (
     EmailField,
     SubmitField,
 )
-from wtforms.validators import DataRequired, Length, Optional
+from wtforms.validators import DataRequired, Length, Optional, Email
+
 
 class LoginForm(FlaskForm):
-    email = EmailField("Почта", validators=[DataRequired()])
-    password = PasswordField("Пароль", validators=[DataRequired()])
-    remember = BooleanField("Запомнить меня")
+    email = EmailField("Почта", validators=[DataRequired()],
+                      render_kw={"placeholder": "example@example.com"})
+    password = PasswordField("Пароль", validators=[DataRequired()],
+                           render_kw={"placeholder": "Введите ваш пароль"})
+    remember_me = BooleanField("Запомнить меня")
+    submit = SubmitField("Войти")
 
 class RegisterForm(FlaskForm):
     email = EmailField("Почта", validators=[DataRequired()])
@@ -50,5 +54,14 @@ class RegisterForm(FlaskForm):
             "набор массы"
         ],
     )
-    dietary_restrictions = TextAreaField("Ограничения", validators=[DataRequired()])
+    dietary_restrictions = SelectField('Диетические ограничения', choices=[
+        ('vegetarian', 'Вегетарианство'),
+        ('vegan', 'Веганство'),
+        ('gluten_free', 'Без глютена'),
+        ('lactose_free', 'Без лактозы'),
+        ('keto', 'Кето-диета'),
+        ('paleo', 'Палео-диета'),
+        ('halal', 'Халяль'),
+        ('kosher', 'Кошер')
+    ])
     submit = SubmitField("Зарегистрироваться")

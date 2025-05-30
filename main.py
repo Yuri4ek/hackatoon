@@ -33,7 +33,8 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    db_sess = db_session.create_session()
+    return db_sess.query(User).get(user_id)
 
 
 # Маршруты
@@ -43,7 +44,7 @@ def index():
 
 
 @app.route('/register', methods=['GET', 'POST'])
-def reqister():
+def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
@@ -56,14 +57,15 @@ def reqister():
                                    form=form,
                                    message="Такой пользователь уже есть")
         user = User(
-            surname=form.surname.data,
             name=form.name.data,
+            email=form.email.data,
             age=form.age.data,
             gender=form.gender.data,
             weight=form.weight.data,
             height=form.height.data,
             activity_level=form.activity_level.data,
             goal=form.goal.data,
+            dietary_restrictions=form.dietary_restrictions.data
         )
         user.set_password(form.password.data)
         db_sess.add(user)
@@ -72,19 +74,21 @@ def reqister():
     return render_template('register.html', title='Регистрация', form=form)
 
 
+# app.py (обработчик)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(
-            User.email == form.email.data).first()
+        user = db_sess.query(User).filter(User.email == form.email.data).first()
+
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
-            return redirect("/")
-        return render_template('login.html',
-                               message="Неправильный логин или пароль",
-                               form=form)
+            return redirect(url_for('index'))
+
+        flash('Неправильный email или пароль', 'error')
+        return redirect(url_for('login'))
+
     return render_template('login.html', title='Авторизация', form=form)
 
 
