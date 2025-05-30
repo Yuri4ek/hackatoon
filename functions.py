@@ -1,4 +1,4 @@
-def answer_bennedict(age, gender, weight, height, activity, goal):
+def answer_bennedict(age, gender, weight, height, activity, goal): #Подсчет кол.
     bmr = 88.36 + (13.4 * weight) + (4.8 * height) - (5.7 * age) if gender == 'мужчина' else 447.6 + (9.2 * weight) + (
             3.1 * height) - (4.3 * age)
     activityes = {
