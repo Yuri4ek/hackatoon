@@ -9,6 +9,7 @@ from flask_login import (
 from flask_restful import abort, Api
 
 from datetime import datetime, date, timedelta
+from form.forms import RegisterForm, LoginForm
 
 from data import db_session
 from data.user import User
@@ -39,43 +40,105 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        name = request.form['name'].strip()
-        email = request.form['email'].strip()
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
 
-        # Валидация
-        if not name:
-            flash('Имя обязательно для заполнения', 'error')
-            return render_template('register.html')
+    if request.method == 'POST':
+        # Получаем данные из формы
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        agree_terms = request.form.get('agree_terms')
+
+        # Дополнительные поля профиля
+        age = request.form.get('age', '').strip()
+        gender = request.form.get('gender', '').strip()
+        weight = request.form.get('weight', '').strip()
+        height = request.form.get('height', '').strip()
+        activity_level = request.form.get('activity_level', '').strip()
+        goal = request.form.get('goal', '').strip()
+        dietary_restrictions = request.form.getlist('dietary_restrictions')
+
+        # Валидация основных полей
+        errors = []
+
+        if not name or len(name) < 2:
+            flash('Имя должно содержать минимум 2 символа', 'name_error')
+            errors.append('name')
 
         if not email:
-            flash('Email обязателен для заполнения', 'error')
-            return render_template('register.html')
+            flash('Email обязателен для заполнения', 'email_error')
+            errors.append('email')
+        elif '@' not in email or '.' not in email:
+            flash('Введите корректный email адрес', 'email_error')
+            errors.append('email')
 
         if len(password) < 6:
-            flash('Пароль должен содержать минимум 6 символов', 'error')
-            return render_template('register.html')
+            flash('Пароль должен содержать минимум 6 символов', 'password_error')
+            errors.append('password')
 
         if password != confirm_password:
-            flash('Пароли не совпадают', 'error')
-            return render_template('register.html')
+            flash('Пароли не совпадают', 'confirm_password_error')
+            errors.append('confirm_password')
+
+        if not agree_terms:
+            flash('Необходимо согласиться с условиями использования', 'terms_error')
+            errors.append('terms')
+
+        # Валидация дополнительных полей (если заполнены)
+        if age and (not age.isdigit() or int(age) < 10 or int(age) > 100):
+            flash('Возраст должен быть от 10 до 100 лет', 'age_error')
+            errors.append('age')
+
+        if weight and (not weight.replace('.', '').isdigit() or float(weight) < 30 or float(weight) > 300):
+            flash('Вес должен быть от 30 до 300 кг', 'weight_error')
+            errors.append('weight')
+
+        if height and (not height.replace('.', '').isdigit() or float(height) < 100 or float(height) > 250):
+            flash('Рост должен быть от 100 до 250 см', 'height_error')
+            errors.append('height')
 
         # Проверка на существование пользователя
         if User.query.filter_by(email=email).first():
-            flash('Пользователь с таким email уже существует', 'error')
+            flash('Пользователь с таким email уже зарегистрирован', 'email_error')
+            errors.append('email')
+
+        if errors:
             return render_template('register.html')
 
         # Создание нового пользователя
-        user = User(name=name, email=email)
-        user.set_password(password)
-
         try:
+            user = User(
+                name=name,
+                email=email,
+                age=int(age) if age else None,
+                gender=gender if gender else None,
+                weight=float(weight) if weight else None,
+                height=float(height) if height else None,
+                activity_level=activity_level if activity_level else None,
+                goal=goal if goal else None
+            )
+            user.set_password(password)
+
+            # Устанавливаем диетические ограничения
+            if dietary_restrictions:
+                user.set_dietary_restrictions_list(dietary_restrictions)
+
             User.session.add(user)
             User.session.commit()
-            flash('Регистрация успешна! Теперь вы можете войти в систему.', 'success')
-            return redirect(url_for('login'))
+
+            # Автоматический вход после регистрации
+            login_user(user)
+            flash(f'Добро пожаловать в NutriPlan, {user.name}!', 'success')
+
+            # Если профиль заполнен частично, перенаправляем на его завершение
+            if not all([user.age, user.gender, user.weight, user.height]):
+                flash('Завершите заполнение профиля для получения персональных рекомендаций', 'info')
+                return redirect(url_for('profile'))
+            else:
+                return redirect(url_for('dashboard'))
+
         except Exception as e:
             User.session.rollback()
             flash('Произошла ошибка при регистрации. Попробуйте еще раз.', 'error')
@@ -87,24 +150,15 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email'].strip()
+        username = request.form['username']
         password = request.form['password']
-        remember_me = bool(request.form.get('remember_me'))
-
-        if not email or not password:
-            flash('Пожалуйста, заполните все поля', 'error')
-            return render_template('login.html')
-
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
-            login_user(user, remember=remember_me)
-            next_page = request.args.get('next')
-            if next_page:
-                return redirect(next_page)
+            login_user(user)
             return redirect(url_for('dashboard'))
         else:
-            flash('Неверный email или пароль', 'error')
+            flash('Неверное имя пользователя или пароль')
 
     return render_template('login.html')
 

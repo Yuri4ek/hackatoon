@@ -5,108 +5,36 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-5">
+        <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white text-center">
-                    <h4><i class="fas fa-sign-in-alt"></i> Добро пожаловать!</h4>
-                    <p class="mb-0 small">Войдите в свой аккаунт NutriPlan</p>
+                    <h4><i class="fas fa-sign-in-alt"></i> Вход в систему</h4>
                 </div>
                 <div class="card-body p-4">
-                    <form method="POST" novalidate>
+                    <form method="POST">
                         <div class="mb-3">
-                            <label for="email" class="form-label">
-                                <i class="fas fa-envelope text-primary"></i> Email адрес
-                            </label>
-                            <input type="email" 
-                                   class="form-control form-control-lg" 
-                                   id="email" 
-                                   name="email" 
-                                   value="{{ request.form.get('email', '') }}"
-                                   placeholder="Введите ваш email"
-                                   required 
-                                   autofocus>
+                            <label for="username" class="form-label">Имя пользователя</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="password" class="form-label">
-                                <i class="fas fa-lock text-primary"></i> Пароль
-                            </label>
-                            <div class="input-group">
-                                <input type="password" 
-                                       class="form-control form-control-lg" 
-                                       id="password" 
-                                       name="password" 
-                                       placeholder="Введите пароль"
-                                       required>
-                                <button class="btn btn-outline-secondary" 
-                                        type="button" 
-                                        onclick="togglePassword('password')">
-                                    <i class="fas fa-eye" id="password-icon"></i>
-                                </button>
-                            </div>
+                            <label for="password" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        
-                        <div class="mb-3">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" 
-                                               type="checkbox" 
-                                               id="remember_me" 
-                                               name="remember_me">
-                                        <label class="form-check-label" for="remember_me">
-                                            Запомнить меня
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-6 text-end">
-                                    <a href="#" class="text-decoration-none small">
-                                        Забыли пароль?
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        
+
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-sign-in-alt"></i> Войти
                             </button>
                         </div>
                     </form>
-                    
-                    <div class="text-center mt-4">
-                        <p class="text-muted">Нет аккаунта?</p>
-                        <a href="{{ url_for('register') }}" class="btn btn-outline-success">
-                            <i class="fas fa-user-plus"></i> Создать аккаунт
-                        </a>
+
+                    <div class="text-center mt-3">
+                        <p>Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const icon = document.getElementById(fieldId + '-icon');
-    
-    if (field.type === 'password') {
-        field.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-    } else {
-        field.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-    }
-}
-
-// Автофокус на поле email при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('email').focus();
-});
-</script>
 {% endblock %}

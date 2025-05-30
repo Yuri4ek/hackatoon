@@ -3,121 +3,718 @@
 {% block title %}Регистрация - NutriPlan{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white text-center">
-                    <h4><i class="fas fa-user-plus"></i> Создать аккаунт</h4>
-                    <p class="mb-0 small">Присоединяйтесь к NutriPlan для здорового питания</p>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <i class="fas fa-leaf"></i>
+            </div>
+            <h1>Регистрация</h1>
+            <p class="auth-subtitle">Создайте аккаунт для доступа к NutriPlan</p>
+        </div>
+
+        <form action="" method="post" class="auth-form">
+            <!-- Основные поля -->
+            <div class="form-section">
+                <h6 class="section-title">Основная информация</h6>
+
+                <div class="form-group">
+                    <label class="form-label">Имя *</label>
+                    <input type="text"
+                           name="name"
+                           class="form-control"
+                           placeholder="Введите ваше имя"
+                           value="{{ request.form.get('name', '') }}"
+                           required>
+                    {% with messages = get_flashed_messages(category_filter=['name_error']) %}
+                        {% if messages %}
+                            {% for error in messages %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
                 </div>
-                <div class="card-body p-4">
-                    <form method="POST" novalidate>
-                        <div class="mb-3">
-                            <label for="name" class="form-label">
-                                <i class="fas fa-user text-primary"></i> Полное имя
-                            </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{{ request.form.get('name', '') }}"
-                                   placeholder="Введите ваше имя"
-                                   required>
-                            <div class="form-text">Как к вам обращаться в приложении</div>
+
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email"
+                           name="email"
+                           class="form-control"
+                           placeholder="Введите ваш email"
+                           value="{{ request.form.get('email', '') }}"
+                           required>
+                    {% with messages = get_flashed_messages(category_filter=['email_error']) %}
+                        {% if messages %}
+                            {% for error in messages %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Пароль *</label>
+                    <div class="password-wrapper">
+                        <input type="password"
+                               name="password"
+                               class="form-control"
+                               placeholder="Придумайте пароль"
+                               id="password"
+                               required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <i class="fas fa-eye" id="password-icon"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strength-fill"></div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="email" class="form-label">
-                                <i class="fas fa-envelope text-primary"></i> Email адрес
-                            </label>
-                            <input type="email" 
-                                   class="form-control" 
-                                   id="email" 
-                                   name="email" 
-                                   value="{{ request.form.get('email', '') }}"
-                                   placeholder="example@email.com"
-                                   required>
-                            <div class="form-text">Будет использоваться для входа в систему</div>
+                        <div class="strength-text" id="strength-text">Введите пароль</div>
+                    </div>
+                    {% with messages = get_flashed_messages(category_filter=['password_error']) %}
+                        {% if messages %}
+                            {% for error in messages %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Подтвердите пароль *</label>
+                    <div class="password-wrapper">
+                        <input type="password"
+                               name="confirm_password"
+                               class="form-control"
+                               placeholder="Повторите пароль"
+                               id="confirm_password"
+                               required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm_password')">
+                            <i class="fas fa-eye" id="confirm_password-icon"></i>
+                        </button>
+                    </div>
+                    {% with messages = get_flashed_messages(category_filter=['confirm_password_error']) %}
+                        {% if messages %}
+                            {% for error in messages %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Дополнительная информация профиля -->
+            <div class="form-section">
+                <h6 class="section-title">
+                    Информация о профиле
+                    <small class="text-muted">(необязательно, можно заполнить позже)</small>
+                </h6>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Возраст</label>
+                            <input type="number"
+                                   name="age"
+                                   class="form-control"
+                                   placeholder="Лет"
+                                   value="{{ request.form.get('age', '') }}"
+                                   min="10"
+                                   max="100">
+                            {% with messages = get_flashed_messages(category_filter=['age_error']) %}
+                                {% if messages %}
+                                    {% for error in messages %}
+                                        <div class="alert alert-danger" role="alert">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="password" class="form-label">
-                                <i class="fas fa-lock text-primary"></i> Пароль
-                            </label>
-                            <div class="input-group">
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="password" 
-                                       name="password" 
-                                       placeholder="Минимум 6 символов"
-                                       required>
-                                <button class="btn btn-outline-secondary" 
-                                        type="button" 
-                                        onclick="togglePassword('password')">
-                                    <i class="fas fa-eye" id="password-icon"></i>
-                                </button>
-                            </div>
-                            <div class="form-text">Используйте надежный пароль</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Пол</label>
+                            <select name="gender" class="form-control">
+                                <option value="">Выберите пол</option>
+                                <option value="male" {% if request.form.get('gender') == 'male' %}selected{% endif %}>
+                                    Мужской
+                                </option>
+                                <option value="female" {% if request.form.get('gender') == 'female' %}selected{% endif %}>
+                                    Женский
+                                </option>
+                            </select>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="confirm_password" class="form-label">
-                                <i class="fas fa-lock text-primary"></i> Подтвердите пароль
-                            </label>
-                            <div class="input-group">
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="confirm_password" 
-                                       name="confirm_password" 
-                                       placeholder="Повторите пароль"
-                                       required>
-                                <button class="btn btn-outline-secondary" 
-                                        type="button" 
-                                        onclick="togglePassword('confirm_password')">
-                                    <i class="fas fa-eye" id="confirm_password-icon"></i>
-                                </button>
-                            </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Вес (кг)</label>
+                            <input type="number"
+                                   name="weight"
+                                   class="form-control"
+                                   placeholder="Например: 70.5"
+                                   value="{{ request.form.get('weight', '') }}"
+                                   step="0.1"
+                                   min="30"
+                                   max="300">
+                            {% with messages = get_flashed_messages(category_filter=['weight_error']) %}
+                                {% if messages %}
+                                    {% for error in messages %}
+                                        <div class="alert alert-danger" role="alert">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
                         </div>
-                        
-                        <div class="mb-3">
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Рост (см)</label>
+                            <input type="number"
+                                   name="height"
+                                   class="form-control"
+                                   placeholder="Например: 175"
+                                   value="{{ request.form.get('height', '') }}"
+                                   step="0.1"
+                                   min="100"
+                                   max="250">
+                            {% with messages = get_flashed_messages(category_filter=['height_error']) %}
+                                {% if messages %}
+                                    {% for error in messages %}
+                                        <div class="alert alert-danger" role="alert">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Уровень активности</label>
+                    <select name="activity_level" class="form-control">
+                        <option value="">Выберите уровень активности</option>
+                        <option value="sedentary" {% if request.form.get('activity_level') == 'sedentary' %}selected{% endif %}>
+                            Малоподвижный (офисная работа)
+                        </option>
+                        <option value="light" {% if request.form.get('activity_level') == 'light' %}selected{% endif %}>
+                            Легкая активность (1-3 тренировки в неделю)
+                        </option>
+                        <option value="moderate" {% if request.form.get('activity_level') == 'moderate' %}selected{% endif %}>
+                            Умеренная активность (3-5 тренировок в неделю)
+                        </option>
+                        <option value="active" {% if request.form.get('activity_level') == 'active' %}selected{% endif %}>
+                            Высокая активность (6-7 тренировок в неделю)
+                        </option>
+                        <option value="very_active" {% if request.form.get('activity_level') == 'very_active' %}selected{% endif %}>
+                            Очень высокая активность (2 тренировки в день)
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Цель</label>
+                    <select name="goal" class="form-control">
+                        <option value="">Выберите цель</option>
+                        <option value="weight_loss" {% if request.form.get('goal') == 'weight_loss' %}selected{% endif %}>
+                            Похудение
+                        </option>
+                        <option value="maintenance" {% if request.form.get('goal') == 'maintenance' %}selected{% endif %}>
+                            Поддержание веса
+                        </option>
+                        <option value="muscle_gain" {% if request.form.get('goal') == 'muscle_gain' %}selected{% endif %}>
+                            Набор мышечной массы
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Диетические ограничения</label>
+                    <div class="row">
+                        {% set user_restrictions = request.form.getlist('dietary_restrictions') %}
+                        <div class="col-md-6">
                             <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="agree_terms" 
-                                       required>
-                                <label class="form-check-label" for="agree_terms">
-                                    Я согласен с <a href="#" target="_blank">условиями использования</a> 
-                                    и <a href="#" target="_blank">политикой конфиденциальности</a>
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="vegetarian"
+                                       id="vegetarian"
+                                       {% if 'vegetarian' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="vegetarian">
+                                    Вегетарианство
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="vegan"
+                                       id="vegan"
+                                       {% if 'vegan' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="vegan">
+                                    Веганство
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="gluten_free"
+                                       id="gluten_free"
+                                       {% if 'gluten_free' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="gluten_free">
+                                    Без глютена
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="lactose_free"
+                                       id="lactose_free"
+                                       {% if 'lactose_free' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="lactose_free">
+                                    Без лактозы
                                 </label>
                             </div>
                         </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-user-plus"></i> Создать аккаунт
-                            </button>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="keto"
+                                       id="keto"
+                                       {% if 'keto' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="keto">
+                                    Кето-диета
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="paleo"
+                                       id="paleo"
+                                       {% if 'paleo' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="paleo">
+                                    Палео-диета
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="halal"
+                                       id="halal"
+                                       {% if 'halal' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="halal">
+                                    Халяль
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="dietary_restrictions"
+                                       value="kosher"
+                                       id="kosher"
+                                       {% if 'kosher' in user_restrictions %}checked{% endif %}>
+                                <label class="form-check-label" for="kosher">
+                                    Кошер
+                                </label>
+                            </div>
                         </div>
-                    </form>
-                    
-                    <div class="text-center mt-4">
-                        <p class="text-muted">Уже есть аккаунт?</p>
-                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-sign-in-alt"></i> Войти в систему
-                        </a>
                     </div>
                 </div>
             </div>
-            
-            <div class="text-center mt-3">
-                <small class="text-muted">
-                    <i class="fas fa-shield-alt"></i> 
-                    Ваши данные защищены и не передаются третьим лицам
-                </small>
+
+            <!-- Согласие с условиями -->
+            <div class="form-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" name="agree_terms" required>
+                    <span class="checkmark"></span>
+                    Я согласен с <a href="#" class="link">условиями использования</a> и <a href="#" class="link">политикой конфиденциальности</a>
+                </label>
+                {% with messages = get_flashed_messages(category_filter=['terms_error']) %}
+                    {% if messages %}
+                        {% for error in messages %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
             </div>
-        </div>
+
+            <button type="submit" class="btn btn-primary submit-btn">
+                <i class="fas fa-user-plus me-2"></i>
+                Создать аккаунт
+            </button>
+
+            {% with messages = get_flashed_messages(category_filter=['error']) %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-danger mt-3" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% with messages = get_flashed_messages(category_filter=['success']) %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-success mt-3" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="auth-link">
+                Уже зарегистрированы? <a href="{{ url_for('login') }}" class="link">Войти</a>
+            </div>
+        </form>
     </div>
 </div>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* Стили для аутентификации */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.auth-logo {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 24px;
+}
+
+.auth-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 8px 0;
+}
+
+.auth-subtitle {
+    color: #718096;
+    margin: 0;
+    font-size: 16px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.form-section {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    background: #f7fafc;
+}
+
+.section-title {
+    color: #2d3748;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.form-control {
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #28a745;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+
+.password-toggle:hover {
+    color: #2d3748;
+}
+
+.password-strength {
+    margin-top: 8px;
+}
+
+.strength-bar {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-text {
+    font-size: 12px;
+    margin-top: 4px;
+    color: #718096;
+}
+
+.row {
+    display: flex;
+    gap: 15px;
+    margin: -7.5px;
+}
+
+.col-md-6 {
+    flex: 1;
+    padding: 7.5px;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.form-check-input {
+    margin: 0;
+}
+
+.form-check-label {
+    font-size: 14px;
+    color: #4a5568;
+    margin: 0;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.5;
+}
+
+.checkbox-container input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.auth-link {
+    text-align: center;
+    color: #718096;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.link {
+    color: #28a745;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.link:hover {
+    color: #20c997;
+    text-decoration: underline;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.alert-danger {
+    background: #fed7d7;
+    color: #c53030;
+    border: 1px solid #feb2b2;
+}
+
+.alert-success {
+    background: #c6f6d5;
+    color: #2f855a;
+    border: 1px solid #9ae6b4;
+}
+
+.alert-info {
+    background: #bee3f8;
+    color: #2b6cb0;
+    border: 1px solid #90cdf4;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .auth-container {
+        padding: 10px;
+    }
+
+    .auth-card {
+        padding: 30px 20px;
+        max-width: 100%;
+    }
+
+    .auth-header h1 {
+        font-size: 24px;
+    }
+
+    .row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .col-md-6 {
+        padding: 0;
+    }
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -125,7 +722,7 @@
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = document.getElementById(fieldId + '-icon');
-    
+
     if (field.type === 'password') {
         field.type = 'text';
         icon.classList.remove('fa-eye');
@@ -137,22 +734,62 @@ function togglePassword(fieldId) {
     }
 }
 
-// Валидация формы в реальном времени
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirm_password');
-    
-    function validatePasswords() {
-        if (password.value !== confirmPassword.value) {
-            confirmPassword.setCustomValidity('Пароли не совпадают');
-        } else {
-            confirmPassword.setCustomValidity('');
-        }
+// Проверка силы пароля
+function checkPasswordStrength(password) {
+    let strength = 0;
+    let feedback = '';
+
+    if (password.length >= 6) strength += 1;
+    if (password.length >= 8) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+
+    const strengthFill = document.getElementById('strength-fill');
+    const strengthText = document.getElementById('strength-text');
+
+    switch (strength) {
+        case 0:
+        case 1:
+            strengthFill.style.width = '20%';
+            strengthFill.style.background = '#e53e3e';
+            feedback = 'Очень слабый';
+            break;
+        case 2:
+            strengthFill.style.width = '40%';
+            strengthFill.style.background = '#dd6b20';
+            feedback = 'Слабый';
+            break;
+        case 3:
+            strengthFill.style.width = '60%';
+            strengthFill.style.background = '#d69e2e';
+            feedback = 'Средний';
+            break;
+        case 4:
+            strengthFill.style.width = '80%';
+            strengthFill.style.background = '#38a169';
+            feedback = 'Хороший';
+            break;
+        case 5:
+        case 6:
+            strengthFill.style.width = '100%';
+            strengthFill.style.background = '#28a745';
+            feedback = 'Отличный';
+            break;
     }
-    
-    password.addEventListener('input', validatePasswords);
-    confirmPassword.addEventListener('input', validatePasswords);
+
+    strengthText.textContent = feedback;
+    strengthText.style.color = strengthFill.style.background;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const password = document.getElementById('password');
+    if (password) {
+        password.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+        });
+    }
 });
 </script>
 {% endblock %}

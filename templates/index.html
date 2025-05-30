@@ -131,7 +131,7 @@
                 <p class="lead mb-4">Присоединяйтесь к тысячам пользователей, которые уже достигли своих целей</p>
                 {% if not current_user.is_authenticated %}
                 <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-rocket"></i> Зарегистрироваться бесплатно
+                    <i class="fas fa-rocket"></i> Зарегистрироваться
                 </a>
                 {% endif %}
             </div>
