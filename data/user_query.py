@@ -10,5 +10,5 @@ class User_Query(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     user_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('users.id'))
-    query_text = sqlalchemy.Column(sqlalchemy.Text)
-    response_text = sqlalchemy.Column(sqlalchemy.Text)
+    message = sqlalchemy.Column(sqlalchemy.Text)
+    response = sqlalchemy.Column(sqlalchemy.Text)
