@@ -8,11 +8,13 @@ from flask_login import (
 )
 from flask_restful import abort, Api
 
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from data import db_session
 from data.user import User
 from data.user_query import User_Query
+from data.food_entry import FoodEntry
+from data.meal_plan import MealPlan
 
 
 app = Flask(__name__)
