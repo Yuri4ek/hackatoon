@@ -416,7 +416,6 @@ def chatbot_api():
     try:
         # Генерируем ответ чат-бота
         response = generate_chatbot_response(message, current_user)
-        print(response)
 
         # Сохраняем в базу данных
         chatbot_message = User_Query(
