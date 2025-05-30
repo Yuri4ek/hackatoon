@@ -1,5 +1,3 @@
-import random
-
 from flask import Flask, render_template, redirect, url_for, flash, abort, request, jsonify
 from flask_login import (
     LoginManager,
@@ -30,6 +28,25 @@ app.config["SECRET_KEY"] = "secret-key"
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+def answer_bennedict(user): #Подсчет калорий
+    try:
+        bmr = 88.36 + (13.4 * user.weight) + (4.8 * user.height) - (5.7 * user.age) if user.gender == 'мужчина' else 447.6 + (9.2 * user.weight) + (
+                3.1 * user.height) - (4.3 * user.age)
+        activityes = {
+            'сидячий образ жизни': 1.2,
+            'лёгкая активность': 1.375,
+            'умеренная активность': 1.55,
+            'высокая активность': 1.725,
+            'очень высокая активность': 1.9
+        }
+        bmr *= activityes[user.activity_level]
+        if user.goal == 'похудеть':
+            bmr -= bmr / 10
+        else:
+            bmr += bmr / 10 if user.goal == 'набрать массу' else bmr
+        return bmr
+    except Exception as e:
+        app.logger.error(f"Error in answer_bennedict: {str(e)}")
 
 @app.context_processor
 def utility_processor():
@@ -137,44 +154,32 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/dashboard')
+@app.route('/add_food_entry', methods=['POST'])
 @login_required
-def dashboard():
-    today = date.today()
-    today_entries = FoodEntry.query.filter_by(user_id=current_user.id, date=today).all()
+def add_food_entry():
+    db_sess = db_session.create_session()
 
-    total_calories = sum(entry.calories for entry in today_entries)
-    total_protein = sum(entry.protein for entry in today_entries)
-    total_carbs = sum(entry.carbs for entry in today_entries)
-    total_fat = sum(entry.fat for entry in today_entries)
+    try:
+        food_entry = FoodEntry(
+            user_id=current_user.id,
+            date=datetime.now().date(),
+            food_name=request.form['food_name'],
+            meal_type=request.form['meal_type'],
+            calories=float(request.form['calories']),
+            protein=float(request.form.get('protein', 0)),
+            carbs=float(request.form.get('carbs', 0)),
+            fat=float(request.form.get('fat', 0))
+        )
 
-    target_calories = current_user.calculate_bmr() if current_user.calculate_bmr() else 2000
+        db_sess.add(food_entry)
+        db_sess.commit()
+        flash('Запись о питании успешно добавлена!', 'success')
+    except Exception as e:
+        app.logger.error(f"Error in dashboard: {str(e)}")
+        flash('Ошибка при добавлении записи', 'error')
 
-    return render_template('dashboard.html',
-                           total_calories=total_calories,
-                           total_protein=total_protein,
-                           total_carbs=total_carbs,
-                           total_fat=total_fat,
-                           target_calories=target_calories,
-                           today_entries=today_entries)
-
-
-def answer_bennedict(age, gender, weight, height, activity, goal):  # Подсчет кол.
-    bmr = 88.36 + (13.4 * weight) + (4.8 * height) - (5.7 * age) if gender == 'мужчина' else 447.6 + (9.2 * weight) + (
-            3.1 * height) - (4.3 * age)
-    activityes = {
-        'сидячий образ жизни': 1.2,
-        'лёгкая активность': 1.375,
-        'умеренная активность': 1.55,
-        'высокая активность': 1.725,
-        'очень высокая активность': 1.9
-    }
-    bmr *= activityes[activity]
-    if goal == 'похудеть':
-        bmr -= bmr / 10
-    else:
-        bmr += bmr / 10 if goal == 'набрать массу' else bmr
-    return bmr
+    finally:
+        db_sess.close()
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -265,26 +270,51 @@ def meal_planner():
 @app.route('/nutrition_analysis')
 @login_required
 def nutrition_analysis():
-    selected_date = request.args.get('date', date.today().isoformat())
-    selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    try:
+        # Получаем дату из параметров запроса или используем сегодняшнюю
+        selected_date = request.args.get('date', date.today().isoformat())
 
-    entries = FoodEntry.query.filter_by(user_id=current_user.id, date=selected_date).all()
+        # Создаем сессию БД
+        db_sess = db_session.create_session()
 
-    total_calories = sum(entry.calories for entry in entries)
-    total_protein = sum(entry.protein for entry in entries)
-    total_carbs = sum(entry.carbs for entry in entries)
-    total_fat = sum(entry.fat for entry in entries)
+        # Получаем записи о питании для текущего пользователя и выбранной даты
+        entries = db_sess.query(FoodEntry).filter(
+            FoodEntry.user_id == current_user.id,
+            FoodEntry.date == selected_date
+        ).all()
 
-    target_calories = current_user.calculate_bmr() if current_user.calculate_bmr() else 2000
+        # Расчет сумм с защитой от None
+        total_calories = sum(entry.calories or 0 for entry in entries)
+        total_protein = sum(entry.protein or 0 for entry in entries)
+        total_carbs = sum(entry.carbs or 0 for entry in entries)
+        total_fat = sum(entry.fat or 0 for entry in entries)
 
-    return render_template('nutrition_analysis.html',
-                           selected_date=selected_date,
-                           entries=entries,
-                           total_calories=total_calories,
-                           total_protein=total_protein,
-                           total_carbs=total_carbs,
-                           total_fat=total_fat,
-                           target_calories=target_calories)
+        # Рассчитываем целевую норму калорий
+        target_calories = answer_bennedict(current_user) if answer_bennedict(current_user) else 2000
+
+        return render_template('nutrition_analysis.html',
+                               selected_date=selected_date,
+                               entries=entries,
+                               total_calories=total_calories,
+                               total_protein=total_protein,
+                               total_carbs=total_carbs,
+                               total_fat=total_fat,
+                               target_calories=target_calories)
+
+    except Exception as e:
+        app.logger.error(f"Error in nutrition_analysis: {str(e)}")
+        flash('Произошла ошибка при загрузке данных анализа питания', 'error')
+        return render_template('nutrition_analysis.html',
+                               selected_date=date.today().isoformat(),
+                               entries=[],
+                               total_calories=0,
+                               total_protein=0,
+                               total_carbs=0,
+                               total_fat=0,
+                               target_calories=2000)
+
+    finally:
+        db_sess.close()
 
 
 @app.route('/knowledge_base')
@@ -297,7 +327,6 @@ def lifestyle_tips():
     return render_template('lifestyle_tips.html')
 
 
-# API маршруты
 @app.route('/api/nutrition_data')
 @login_required
 def nutrition_data():
@@ -305,7 +334,10 @@ def nutrition_data():
     end_date = date.today()
     start_date = end_date - timedelta(days=days - 1)
 
-    entries = FoodEntry.query.filter(
+    db_sess = db_session.create_session()
+
+    entries = db_sess.query(
+            FoodEntry).filter(
         FoodEntry.user_id == current_user.id,
         FoodEntry.date >= start_date,
         FoodEntry.date <= end_date

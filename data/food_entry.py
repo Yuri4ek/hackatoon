@@ -17,4 +17,3 @@ class FoodEntry(SqlAlchemyBase, UserMixin, SerializerMixin):
     carbs = sqlalchemy.Column(sqlalchemy.Float, default=0)
     fat = sqlalchemy.Column(sqlalchemy.Float, default=0)
     meal_type = sqlalchemy.Column(sqlalchemy.String(20), nullable=False)
-

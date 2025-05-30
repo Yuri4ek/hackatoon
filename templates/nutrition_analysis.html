@@ -8,9 +8,6 @@
         <div class="col-md-3 sidebar p-3">
             <h5 class="mb-3">Навигация</h5>
             <nav class="nav flex-column">
-                <a class="nav-link" href="{{ url_for('dashboard') }}">
-                    <i class="fas fa-tachometer-alt"></i> Панель управления
-                </a>
                 <a class="nav-link" href="{{ url_for('profile') }}">
                     <i class="fas fa-user"></i> Профиль
                 </a>
@@ -27,9 +24,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Анализ рациона</h2>
                 <div>
-                    <input type="date" class="form-control" id="dateSelector" 
-                           value="{{ selected_date.isoformat() }}" 
-                           onchange="window.location.href='{{ url_for('nutrition_analysis') }}?date=' + this.value">
+                    <input type="date" class="form-control" id="dateSelector"
+                           onchange="window.location.href='{{ url_for('nutrition_analysis') }}'">
                 </div>
             </div>
             
@@ -186,8 +182,6 @@
             </div>
             <form action="{{ url_for('add_food_entry') }}" method="POST">
                 <div class="modal-body">
-                    <input type="hidden" name="date" value="{{ selected_date.isoformat() }}">
-                    
                     <div class="mb-3">
                         <label for="food_name" class="form-label">Название продукта/блюда</label>
                         <input type="text" class="form-control" name="food_name" required>
