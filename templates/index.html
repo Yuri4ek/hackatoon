@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-4 mb-4">Планируйте питание с умом</h1>
+        <p class="lead mb-4">Персонализированные планы питания, анализ рациона и база знаний для здорового образа жизни</p>
+        <div class="d-flex justify-content-center gap-3">
+            {% if not session.user_id %}
+            <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Начать сейчас
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>Войти
+            </a>
+            {% else %}
+            <a href="{{ url_for('planner') }}" class="btn btn-light btn-lg">
+                <i class="fas fa-calendar-alt me-2"></i>Мой планировщик
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row text-center mb-5">
+        <div class="col-12">
+            <h2 class="mb-4">Возможности сервиса</h2>
+            <p class="lead text-muted">Все инструменты для здорового питания в одном месте</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="fas fa-user-cog fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Персональный профиль</h5>
+                    <p class="card-text">Укажите свои параметры, цели и предпочтения для получения индивидуальных рекомендаций</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="fas fa-calendar-week fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Планировщик питания</h5>
+                    <p class="card-text">Интерактивный календарь с автоматической генерацией меню и возможностью экспорта</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="fas fa-chart-pie fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Анализ рациона</h5>
+                    <p class="card-text">Подсчет калорий и БЖУ с визуализацией баланса нутриентов и рекомендациями</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="fas fa-book fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">База знаний</h5>
+                    <p class="card-text">Простые объяснения о питании, нутриентах и ответы на частые вопросы</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="fas fa-utensils fa-3x text-danger mb-3"></i>
+                    <h5 class="card-title">Каталог рецептов</h5>
+                    <p class="card-text">Рецепты с фильтрами по калорийности, времени приготовления и типу диеты</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="fas fa-mobile-alt fa-3x text-purple mb-3"></i>
+                    <h5 class="card-title">Удобный интерфейс</h5>
+                    <p class="card-text">Интуитивно понятный дизайн, адаптированный для всех устройств</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h3>Преимущества NutriPlan</h3>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Персонализированные рекомендации</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Научно обоснованные расчеты</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Простота использования</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Постоянное обновление базы данных</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Экспорт планов питания</li>
+                </ul>
+            </div>
+            <div class="col-md-6 text-center">
+                <img src="/placeholder.svg?height=300&width=400" alt="Интерфейс приложения" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

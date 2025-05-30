@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Анализ рациона{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-chart-pie me-2"></i>Анализ рациона</h2>
+            <p class="text-muted">Анализ вашего питания за последние 7 дней</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5>Динамика калорий</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="caloriesChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5>Баланс БЖУ</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="macroChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5>Рекомендации</h5>
+                </div>
+                <div class="card-body">
+                    {% if bmr > 0 %}
+                    <div class="mb-3">
+                        <h6>Ваша норма калорий:</h6>
+                        <span class="badge bg-primary fs-6">{{ bmr }} ккал/день</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if daily_stats %}
+                    {% set avg_calories = (daily_stats|sum(attribute=1) / daily_stats|length)|round %}
+                    <div class="mb-3">
+                        <h6>Средняя калорийность:</h6>
+                        <span class="badge bg-success fs-6">{{ avg_calories }} ккал/день</span>
+                    </div>
+                    
+                    {% if bmr > 0 %}
+                    <div class="alert alert-info">
+                        {% if avg_calories < bmr * 0.8 %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Вы потребляете слишком мало калорий. Рекомендуется увеличить калорийность рациона.
+                        {% elif avg_calories > bmr * 1.2 %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Вы потребляете слишком много калорий. Рекомендуется снизить калорийность рациона.
+                        {% else %}
+                        <i class="fas fa-check-circle me-2"></i>
+                        Ваша калорийность в пределах нормы!
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <h6>Общие рекомендации:</h6>
+                        <ul class="small">
+                            <li>Пейте достаточно воды (30-35 мл на кг веса)</li>
+                            <li>Включайте в рацион разнообразные продукты</li>
+                            <li>Соблюдайте режим питания</li>
+                            <li>Контролируйте размер порций</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-3">
+                <div class="card-header bg-warning text-white">
+                    <h5>Статистика</h5>
+                </div>
+                <div class="card-body">
+                    {% if daily_stats %}
+                    <div class="row text-center">
+                        <div class="col-12 mb-2">
+                            <small class="text-muted">Дней с записями</small>
+                            <h6>{{ daily_stats|length }}</h6>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Мин. калории</small>
+                            <h6>{{ daily_stats|min(attribute=1)|int }}</h6>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Макс. калории</small>
+                            <h6>{{ daily_stats|max(attribute=1)|int }}</h6>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Среднее</small>
+                            <h6>{{ (daily_stats|sum(attribute=1) / daily_stats|length)|int }}</h6>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">Нет данных для анализа</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// График калорий
+const caloriesCtx = document.getElementById('caloriesChart').getContext('2d');
+const caloriesData = {
+    labels: [
+        {% for stat in daily_stats %}
+        '{{ stat[0] }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'Калории',
+        data: [
+            {% for stat in daily_stats %}
+            {{ stat[1] or 0 }},
+            {% endfor %}
+        ],
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.1
+    }]
+};
+
+new Chart(caloriesCtx, {
+    type: 'line',
+    data: caloriesData,
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// График БЖУ
+const macroCtx = document.getElementById('macroChart').getContext('2d');
+{% if daily_stats %}
+{% set total_protein = daily_stats|sum(attribute=2) %}
+{% set total_carbs = daily_stats|sum(attribute=3) %}
+{% set total_fat = daily_stats|sum(attribute=4) %}
+
+const macroData = {
+    labels: ['Белки', 'Углеводы', 'Жиры'],
+    datasets: [{
+        data: [{{ total_protein or 0 }}, {{ total_carbs or 0 }}, {{ total_fat or 0 }}],
+        backgroundColor: [
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(255, 99, 132, 0.8)'
+        ],
+        borderColor: [
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(255, 99, 132, 1)'
+        ],
+        borderWidth: 1
+    }]
+};
+
+new Chart(macroCtx, {
+    type: 'doughnut',
+    data: macroData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}
