@@ -1,37 +1,214 @@
 {% extends "base.html" %}
 
-{% block title %}Регистрация - Планировщик питания{% endblock %}
-
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white text-center">
-                    <h4><i class="fas fa-user-plus me-2"></i>Регистрация</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Имя пользователя</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Пароль</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
-                    </form>
-                    <div class="text-center mt-3">
-                        <p>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></p>
-                    </div>
-                </div>
+<div class="registration-container">
+    <h1 class="registration-title">Регистрация</h1>
+
+    <form class="registration-form" method="POST" novalidate>
+        {{ form.hidden_tag() }}
+
+        <!-- Email Field -->
+        <div class="form-group">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", placeholder="example@example.com") }}
+            {% for error in form.email.errors %}
+                <div class="error-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Password Fields -->
+        <div class="form-group">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control", placeholder="Не менее 8 символов") }}
+            {% for error in form.password.errors %}
+                <div class="error-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.password_again.label(class="form-label") }}
+            {{ form.password_again(class="form-control", placeholder="Повторите пароль") }}
+            {% for error in form.password_again.errors %}
+                <div class="error-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Name and Age -->
+        <div class="form-row">
+            <div class="form-group">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+                {% for error in form.name.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.age.label(class="form-label") }}
+                {{ form.age(class="form-control") }}
+                {% for error in form.age.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
             </div>
         </div>
-    </div>
+
+        <!-- Gender and Physical Info -->
+        <div class="form-row">
+            <div class="form-group">
+                {{ form.gender.label(class="form-label") }}
+                {{ form.gender(class="form-select") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.weight.label(class="form-label") }}
+                {{ form.weight(class="form-control", placeholder="кг") }}
+                {% for error in form.weight.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.height.label(class="form-label") }}
+                {{ form.height(class="form-control", placeholder="см") }}
+                {% for error in form.height.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Activity Level -->
+        <div class="form-group">
+            {{ form.activity_level.label(class="form-label") }}
+            {{ form.activity_level(class="form-select") }}
+        </div>
+
+        <!-- Goal -->
+        <div class="form-group">
+            {{ form.goal.label(class="form-label") }}
+            {{ form.goal(class="form-select") }}
+        </div>
+
+        <!-- dietary_restrictions -->
+        <div class="form-group">
+            {{ form.dietary_restrictions.label(class="form-label") }}
+            {{ form.dietary_restrictions(class="form-select") }}
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-group">
+            {{ form.submit(class="submit-btn") }}
+        </div>
+
+        <!-- Link to Login -->
+        <div class="login-link">
+            Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
+        </div>
+    </form>
 </div>
+
+<style>
+    :root {
+        --primary-color: #28a745;
+        --secondary-color: #20c997;
+        --accent-color: #ffc107;
+        --error-color: #dc3545;
+    }
+
+    .registration-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .registration-title {
+        text-align: center;
+        color: var(--primary-color);
+        margin-bottom: 2rem;
+    }
+
+    .registration-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .form-row .form-group {
+        flex: 1;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .form-control, .form-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+        outline: none;
+    }
+
+    .form-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+    }
+
+    .error-message {
+        color: var(--error-color);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 0.75rem;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .submit-btn:hover {
+        background-color: #218838;
+    }
+
+    .login-link {
+        text-align: center;
+        margin-top: 1rem;
+        color: #6c757d;
+    }
+
+    .login-link a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+</style>
 {% endblock %}
