@@ -4,25 +4,6 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3 sidebar p-3">
-            <h5 class="mb-3">Навигация</h5>
-            <nav class="nav flex-column">
-                <a class="nav-link active" href="{{ url_for('profile') }}">
-                    <i class="fas fa-user"></i> Профиль
-                </a>
-                <a class="nav-link" href="{{ url_for('meal_planner') }}">
-                    <i class="fas fa-calendar-alt"></i> Планировщик питания
-                </a>
-                <a class="nav-link" href="{{ url_for('nutrition_analysis') }}">
-                    <i class="fas fa-chart-pie"></i> Анализ рациона
-                </a>
-                <a class="nav-link" href="{{ url_for('change_password') }}">
-                    <i class="fas fa-key"></i> Изменить пароль
-                </a>
-            </nav>
-        </div>
-        
         <div class="col-md-9 p-4">
             <h2 class="mb-4">Персональный профиль</h2>
             
