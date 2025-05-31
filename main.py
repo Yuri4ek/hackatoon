@@ -45,8 +45,8 @@ def answer_bennedict(user):  # Подсчет калорий
             'высокая активность': 1.725,
             'очень высокая активность': 1.9
         }
-        bmr *= activityes[user.activity_level]
-        if user.goal == 'похудеть':
+        bmr *= activityes.get(user.activity_level, 1.55)
+        if user.goal == 'похудение':
             bmr -= bmr / 10
         else:
             bmr += bmr / 10 if user.goal == 'набор массы' else bmr
@@ -71,19 +71,21 @@ def utility_processor():
             'very_active': 'очень высокая активность'
         }
         goal_map = {
-            'weight_loss': 'похудеть',
+            'weight_loss': 'похудение',
             'muscle_gain': 'набрать массу',
             'maintenance': 'поддержание'
         }
 
         try:
             return answer_bennedict(
-                age=user.age,
-                gender=gender_map.get(user.gender, 'мужчина'),
-                weight=user.weight,
-                height=user.height,
-                activity=activity_map.get(user.activity_level, 'сидячий образ жизни'),
-                goal=goal_map.get(user.goal, 'поддержание')
+                User(
+                    age=user.age,
+                    gender=gender_map[user.gender],
+                    weight=user.weight,
+                    height=user.height,
+                    activity_level=activity_map[user.activity_level],
+                    goal=goal_map[user.goal]
+                )
             )
         except:
             return None
@@ -109,11 +111,13 @@ def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
+            flash('Пароли не совпадают', 'error')
             return render_template('register.html', title='Регистрация',
                                    form=form,
                                    message="Пароли не совпадают")
         db_sess = db_session.create_session()
         if db_sess.query(User).filter(User.email == form.email.data).first():
+            flash('Такой пользователь уже есть', 'error')
             return render_template('register.html', title='Регистрация',
                                    form=form,
                                    message="Такой пользователь уже есть")
@@ -181,9 +185,14 @@ def add_food_entry():
         db_sess.add(food_entry)
         db_sess.commit()
         flash('Запись о питании успешно добавлена!', 'success')
+
+        return redirect(url_for('nutrition_analysis'))
+
     except Exception as e:
         app.logger.error(f"Error in dashboard: {str(e)}")
         flash('Ошибка при добавлении записи', 'error')
+
+        return redirect(url_for('nutrition_analysis'))
 
     finally:
         db_sess.close()
@@ -199,16 +208,18 @@ def profile():
 
             # Основная информация
             user.name = request.form.get('name', '').strip()
-            user.age = int(request.form['age']) if request.form.get('age') else None
-            user.gender = request.form.get('gender') if request.form.get('gender') else None
-            user.weight = float(request.form['weight']) if request.form.get('weight') else None
-            user.height = float(request.form['height']) if request.form.get('height') else None
-            user.activity_level = request.form.get('activity_level') if request.form.get('activity_level') else None
-            user.goal = request.form.get('goal') if request.form.get('goal') else None
+            user.age = int(request.form['age']) if request.form.get('age') else user.age
+            user.gender = request.form.get('gender') if request.form.get('gender') else user.gender
+            user.weight = float(request.form['weight']) if request.form.get('weight') else user.weight
+            user.height = float(request.form['height']) if request.form.get('height') else user.height
+            user.activity_level = request.form.get('activity_level') if request.form.get(
+                'activity_level') else user.activity_level
+            user.goal = request.form.get('goal') if request.form.get('goal') else user.goal
 
             # Диетические ограничения (сохраняем как строку с разделителями)
             dietary_restrictions = request.form.getlist('dietary_restrictions')
-            user.dietary_restrictions = ','.join(dietary_restrictions) if dietary_restrictions else None
+            user.dietary_restrictions = ','.join(
+                dietary_restrictions) if dietary_restrictions else user.dietary_restrictions
 
             db_sess.commit()
             flash('Профиль успешно обновлен!', 'success')

@@ -54,10 +54,10 @@
                                             </label>
                                             <select class="form-select" id="gender" name="gender">
                                                 <option value="">Выберите пол</option>
-                                                <option value="male" {% if current_user.gender == 'Мужской' %}selected{% endif %}>
+                                                <option value="male" {% if current_user.gender =='male' %}selected{% endif %}>
                                                     Мужской
                                                 </option>
-                                                <option value="female" {% if current_user.gender == 'Женский' %}selected{% endif %}>
+                                                <option value="female" {% if current_user.gender =='female' %}selected{% endif %}>
                                                     Женский
                                                 </option>
                                             </select>
@@ -107,19 +107,19 @@
                                             </label>
                                             <select class="form-select" id="activity_level" name="activity_level">
                                                 <option value="">Выберите уровень активности</option>
-                                                <option value="sedentary" {% if current_user.activity_level == 'сидячий_образ жизни' %}selected{% endif %}>
+                                                <option value="sedentary" {% if current_user.activity_level =='sedentary' %}selected{% endif %}>
                                                     сидячий образ жизни
                                                 </option>
-                                                <option value="light" {% if current_user.activity_level =='лёгкая активность' %}selected{% endif %}>
+                                                <option value="light" {% if current_user.activity_level =='light' %}selected{% endif %}>
                                                     лёгкая активность
                                                 </option>
-                                                <option value="moderate" {% if current_user.activity_level =='умеренная активность' %}selected{% endif %}>
+                                                <option value="moderate" {% if current_user.activity_level =='moderate' %}selected{% endif %}>
                                                     умеренная активность
                                                 </option>
-                                                <option value="active" {% if current_user.activity_level =='высокая активность' %}selected{% endif %}>
+                                                <option value="active" {% if current_user.activity_level =='active' %}selected{% endif %}>
                                                     высокая активность
                                                 </option>
-                                                <option value="very_active" {% if current_user.activity_level =='очень высокая активность' %}selected{% endif %}>
+                                                <option value="very_active" {% if current_user.activity_level =='very_active' %}selected{% endif %}>
                                                     очень высокая активность
                                                 </option>
                                             </select>
@@ -133,13 +133,13 @@
                                     </label>
                                     <select class="form-select" id="goal" name="goal">
                                         <option value="">Выберите цель</option>
-                                        <option value="weight_loss" {% if current_user.goal =='похудение' %}selected{% endif %}>
+                                        <option value="weight_loss" {% if current_user.goal =='weight_loss' %}selected{% endif %}>
                                             похудение
                                         </option>
-                                        <option value="maintenance" {% if current_user.goal =='поддержание веса' %}selected{% endif %}>
+                                        <option value="maintenance" {% if current_user.goal =='muscle_gain' %}selected{% endif %}>
                                             поддержание веса
                                         </option>
-                                        <option value="muscle_gain" {% if current_user.goal =='набор массы' %}selected{% endif %}>
+                                        <option value="muscle_gain" {% if current_user.goal =='maintenance' %}selected{% endif %}>
                                             набор массы
                                         </option>
                                     </select>
