@@ -47,7 +47,7 @@ def answer_bennedict(user):  # Подсчет калорий
         if user.goal == 'похудеть':
             bmr -= bmr / 10
         else:
-            bmr += bmr / 10 if user.goal == 'набрать массу' else bmr
+            bmr += bmr / 10 if user.goal == 'набор массы' else bmr
         return bmr
     except Exception as e:
         app.logger.error(f"Error in answer_bennedict: {str(e)}")
@@ -243,8 +243,9 @@ def change_password():
             flash('Новые пароли не совпадают', 'error')
             return render_template('change_password.html')
 
+        db_sess = db_session.create_session()
         current_user.set_password(new_password)
-        User.session.commit()
+        db_sess.commit()
         flash('Пароль успешно изменен!', 'success')
         return redirect(url_for('profile'))
 
