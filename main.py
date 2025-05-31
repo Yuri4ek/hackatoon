@@ -31,11 +31,11 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
-def answer_bennedict(user):  # Подсчет калорий
+def answer_bennedict(age, gender, weight, height, activity_level, goal):  # Подсчет калорий
     try:
-        bmr = 88.36 + (13.4 * user.weight) + (4.8 * user.height) - (
-                5.7 * user.age) if user.gender == 'мужчина' else 447.6 + (9.2 * user.weight) + (
-                3.1 * user.height) - (4.3 * user.age)
+        bmr = 88.36 + (13.4 * weight) + (4.8 * height) - (
+                5.7 * age) if gender == 'мужчина' else 447.6 + (9.2 * weight) + (
+                3.1 * height) - (4.3 * age)
         activityes = {
             'сидячий образ жизни': 1.2,
             'лёгкая активность': 1.375,
@@ -43,11 +43,11 @@ def answer_bennedict(user):  # Подсчет калорий
             'высокая активность': 1.725,
             'очень высокая активность': 1.9
         }
-        bmr *= activityes[user.activity_level]
-        if user.goal == 'похудеть':
+        bmr *= activityes[activity_level]
+        if goal == 'похудение':
             bmr -= bmr / 10
         else:
-            bmr += bmr / 10 if user.goal == 'набор массы' else bmr
+            bmr += bmr / 10 if goal == 'набор массы' else bmr
         return bmr
     except Exception as e:
         app.logger.error(f"Error in answer_bennedict: {str(e)}")
@@ -69,21 +69,24 @@ def utility_processor():
             'very_active': 'очень высокая активность'
         }
         goal_map = {
-            'weight_loss': 'похудеть',
+            'weight_loss': 'похудение',
             'muscle_gain': 'набрать массу',
             'maintenance': 'поддержание'
         }
 
         try:
+            print(user.age, gender_map[user.gender], user.weight, user.height, activity_map[user.activity_level],
+                  goal_map[user.goal])
             return answer_bennedict(
                 age=user.age,
-                gender=gender_map.get(user.gender, 'мужчина'),
+                gender=gender_map[user.gender],
                 weight=user.weight,
                 height=user.height,
-                activity=activity_map.get(user.activity_level, 'сидячий образ жизни'),
-                goal=goal_map.get(user.goal, 'поддержание')
+                activity_level=activity_map[user.activity_level],
+                goal=goal_map[user.goal]
             )
         except:
+            print(1)
             return None
 
     return dict(calculate_bmr=calculate_bmr)
@@ -197,16 +200,18 @@ def profile():
 
             # Основная информация
             user.name = request.form.get('name', '').strip()
-            user.age = int(request.form['age']) if request.form.get('age') else None
-            user.gender = request.form.get('gender') if request.form.get('gender') else None
-            user.weight = float(request.form['weight']) if request.form.get('weight') else None
-            user.height = float(request.form['height']) if request.form.get('height') else None
-            user.activity_level = request.form.get('activity_level') if request.form.get('activity_level') else None
-            user.goal = request.form.get('goal') if request.form.get('goal') else None
+            user.age = int(request.form['age']) if request.form.get('age') else user.age
+            user.gender = request.form.get('gender') if request.form.get('gender') else user.gender
+            user.weight = float(request.form['weight']) if request.form.get('weight') else user.weight
+            user.height = float(request.form['height']) if request.form.get('height') else user.height
+            user.activity_level = request.form.get('activity_level') if request.form.get(
+                'activity_level') else user.activity_level
+            user.goal = request.form.get('goal') if request.form.get('goal') else user.goal
 
             # Диетические ограничения (сохраняем как строку с разделителями)
             dietary_restrictions = request.form.getlist('dietary_restrictions')
-            user.dietary_restrictions = ','.join(dietary_restrictions) if dietary_restrictions else None
+            user.dietary_restrictions = ','.join(
+                dietary_restrictions) if dietary_restrictions else user.dietary_restrictions
 
             db_sess.commit()
             flash('Профиль успешно обновлен!', 'success')
@@ -346,11 +351,11 @@ def generate_meal_plan_for_user(user_id, target_date):
                     user_id=user_id,
                     date=target_date,
                     meal_type=meal_type,
-                    food_name=selected_meal[0], #name
-                    calories=selected_meal[1], #calories
-                    protein=selected_meal[2], #protein
-                    carbs=selected_meal[3], #carbs
-                    fat=selected_meal[4] #fat
+                    food_name=selected_meal[0],  # name
+                    calories=selected_meal[1],  # calories
+                    protein=selected_meal[2],  # protein
+                    carbs=selected_meal[3],  # carbs
+                    fat=selected_meal[4]  # fat
                 )
                 db_sess.add(meal_plan)
 
@@ -453,7 +458,6 @@ def meal_planner():
         return redirect(url_for('index'))
     finally:
         db_sess.close()
-
 
 
 @app.route('/toggle_meal_completion/<int:meal_id>', methods=['POST'])
