@@ -708,6 +708,32 @@ def generate_chatbot_response(message, user):
     return get_ai_answer(*test_data)
 
 
+@app.route('/api/clear_chat', methods=['POST'])
+def clear_chat():
+    # Проверяем аутентификацию пользователя
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Not authorized'}), 401
+
+    try:
+        # Создаем сессию БД
+        db_sess = db_session.create_session()
+
+        # Удаляем все сообщения текущего пользователя
+        db_sess.query(User_Query) \
+            .filter(User_Query.user_id == current_user.id) \
+            .delete()
+
+        # Подтверждаем изменения
+        db_sess.commit()
+
+        return jsonify({'status': 'success'}), 200
+
+    except Exception as e:
+        # В случае ошибки откатываем изменения и возвращаем ошибку
+        db_sess.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/chatbot/history')
 @login_required
 def chatbot_history():
@@ -806,6 +832,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    print(get_days_diet(10, "мужчина", 40, 140, "сидячий образ жизни", "похудение",
-                        "нет"))
+    main()
