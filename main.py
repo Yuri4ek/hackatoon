@@ -107,11 +107,13 @@ def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
+            flash('Пароли не совпадают', 'error')
             return render_template('register.html', title='Регистрация',
                                    form=form,
                                    message="Пароли не совпадают")
         db_sess = db_session.create_session()
         if db_sess.query(User).filter(User.email == form.email.data).first():
+            flash('Такой пользователь уже есть', 'error')
             return render_template('register.html', title='Регистрация',
                                    form=form,
                                    message="Такой пользователь уже есть")
@@ -346,11 +348,11 @@ def generate_meal_plan_for_user(user_id, target_date):
                     user_id=user_id,
                     date=target_date,
                     meal_type=meal_type,
-                    food_name=selected_meal[0], #name
-                    calories=selected_meal[1], #calories
-                    protein=selected_meal[2], #protein
-                    carbs=selected_meal[3], #carbs
-                    fat=selected_meal[4] #fat
+                    food_name=selected_meal[0],  # name
+                    calories=selected_meal[1],  # calories
+                    protein=selected_meal[2],  # protein
+                    carbs=selected_meal[3],  # carbs
+                    fat=selected_meal[4]  # fat
                 )
                 db_sess.add(meal_plan)
 
@@ -453,7 +455,6 @@ def meal_planner():
         return redirect(url_for('index'))
     finally:
         db_sess.close()
-
 
 
 @app.route('/toggle_meal_completion/<int:meal_id>', methods=['POST'])
