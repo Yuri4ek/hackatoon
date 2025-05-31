@@ -31,11 +31,11 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
-def answer_bennedict(age, gender, weight, height, activity_level, goal):  # Подсчет калорий
+def answer_bennedict(user):  # Подсчет калорий
     try:
-        bmr = 88.36 + (13.4 * weight) + (4.8 * height) - (
-                5.7 * age) if gender == 'мужчина' else 447.6 + (9.2 * weight) + (
-                3.1 * height) - (4.3 * age)
+        bmr = 88.36 + (13.4 * user.weight) + (4.8 * user.height) - (
+                5.7 * user.age) if user.gender == 'мужчина' else 447.6 + (9.2 * user.weight) + (
+                3.1 * user.height) - (4.3 * user.age)
         activityes = {
             'сидячий образ жизни': 1.2,
             'лёгкая активность': 1.375,
@@ -43,11 +43,11 @@ def answer_bennedict(age, gender, weight, height, activity_level, goal):  # По
             'высокая активность': 1.725,
             'очень высокая активность': 1.9
         }
-        bmr *= activityes[activity_level]
-        if goal == 'похудение':
+        bmr *= activityes[user.activity_level]
+        if user.goal == 'похудение':
             bmr -= bmr / 10
         else:
-            bmr += bmr / 10 if goal == 'набор массы' else bmr
+            bmr += bmr / 10 if user.goal == 'набор массы' else bmr
         return bmr
     except Exception as e:
         app.logger.error(f"Error in answer_bennedict: {str(e)}")
@@ -75,18 +75,17 @@ def utility_processor():
         }
 
         try:
-            print(user.age, gender_map[user.gender], user.weight, user.height, activity_map[user.activity_level],
-                  goal_map[user.goal])
             return answer_bennedict(
-                age=user.age,
-                gender=gender_map[user.gender],
-                weight=user.weight,
-                height=user.height,
-                activity_level=activity_map[user.activity_level],
-                goal=goal_map[user.goal]
+                User(
+                    age=user.age,
+                    gender=gender_map[user.gender],
+                    weight=user.weight,
+                    height=user.height,
+                    activity_level=activity_map[user.activity_level],
+                    goal=goal_map[user.goal]
+                )
             )
         except:
-            print(1)
             return None
 
     return dict(calculate_bmr=calculate_bmr)
@@ -182,9 +181,14 @@ def add_food_entry():
         db_sess.add(food_entry)
         db_sess.commit()
         flash('Запись о питании успешно добавлена!', 'success')
+
+        return redirect(url_for('nutrition_analysis'))
+
     except Exception as e:
         app.logger.error(f"Error in dashboard: {str(e)}")
         flash('Ошибка при добавлении записи', 'error')
+
+        return redirect(url_for('nutrition_analysis'))
 
     finally:
         db_sess.close()
@@ -393,6 +397,7 @@ def meal_planner():
         if not has_plan:
             # Показываем страницу генерации плана
             target_calories = answer_bennedict(current_user)
+
             return render_template('generate_plan.html',
                                    selected_date=selected_date,
                                    target_calories=target_calories,
