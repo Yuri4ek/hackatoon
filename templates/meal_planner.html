@@ -87,10 +87,10 @@
                                     </div>
                                     <div class="progress progress-custom">
                                         <div class="progress-bar bg-{{ color }}"
-                                             style="width: {{ min(100, (consumed_totals[nutrient] / targets[nutrient] * 100)) }}%">
+                                             style="width: {{ progress_bar_map[nutrient]['progress_bar1'] }}%">
                                         </div>
                                         <div class="progress-bar bg-light opacity-50"
-                                             style="width: {{ max(0, min(100, ((planned_totals[nutrient] - consumed_totals[nutrient]) / targets[nutrient] * 100))) }}%">
+                                             style="width: {{ progress_bar_map[nutrient]['progress_bar2'] }}%">
                                         </div>
                                     </div>
                                 </div>

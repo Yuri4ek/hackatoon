@@ -43,7 +43,7 @@ def answer_bennedict(user):  # Подсчет калорий
             'высокая активность': 1.725,
             'очень высокая активность': 1.9
         }
-        bmr *= activityes[user.activity_level]
+        bmr *= activityes.get(user.activity_level, 1.55)
         if user.goal == 'похудение':
             bmr -= bmr / 10
         else:
@@ -387,9 +387,10 @@ def meal_planner():
         db_sess = db_session.create_session()
 
         # Проверяем, есть ли план на эту дату
+        print(selected_date, type(selected_date))
         existing_plans = db_sess.query(MealPlan).filter(
             MealPlan.user_id == current_user.id,
-            MealPlan.date == selected_date
+            MealPlan.date == str(selected_date)
         ).all()
 
         has_plan = len(existing_plans) > 0
@@ -445,6 +446,19 @@ def meal_planner():
         completed_meals_count = len(completed_meals)
         completion_percentage = (completed_meals_count / total_meals * 100) if total_meals > 0 else 0
 
+        progress_bar_map = {}
+        nutrient_list = ['calories', 'protein', 'carbs', 'fat']
+
+        for nutrient in nutrient_list:
+            if nutrient not in progress_bar_map:
+                progress_bar_map[nutrient] = {
+                    "progress_bar1": 0,
+                    "progress_bar2": 0,
+                }
+
+            progress_bar_map[nutrient]["progress_bar1"] = min(100, (consumed_totals[nutrient] / targets[nutrient] * 100))
+            progress_bar_map[nutrient]["progress_bar2"] = max(0, min(100, ((planned_totals[nutrient] - consumed_totals[nutrient]) / targets[nutrient] * 100)))
+
         return render_template('meal_planner.html',
                                selected_date=selected_date,
                                meals_by_type=meals_by_type,
@@ -454,6 +468,7 @@ def meal_planner():
                                completion_percentage=completion_percentage,
                                total_meals=total_meals,
                                completed_meals_count=completed_meals_count,
+                               progress_bar_map=progress_bar_map,
                                prev_date=(selected_date - timedelta(days=1)).isoformat(),
                                next_date=(selected_date + timedelta(days=1)).isoformat())
 
