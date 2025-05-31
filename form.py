@@ -49,7 +49,7 @@ class RegisterForm(FlaskForm):
     goal = SelectField(
         "Цель",
         choices=[
-            "ЗОЖ",
+            "поддержание веса",
             "похудение",
             "набор массы"
         ],
