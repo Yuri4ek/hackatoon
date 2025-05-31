@@ -55,6 +55,7 @@ class RegisterForm(FlaskForm):
         ],
     )
     dietary_restrictions = SelectField('Диетические ограничения', choices=[
+        ('no', 'Нет'),
         ('vegetarian', 'Вегетарианство'),
         ('vegan', 'Веганство'),
         ('gluten_free', 'Без глютена'),

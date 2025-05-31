@@ -146,13 +146,13 @@
                                     </label>
                                     <select class="form-select" id="goal" name="goal">
                                         <option value="">Выберите цель</option>
-                                        <option value="weight_loss" {% if current_user.goal == 'weight_loss' %}selected{% endif %}>
+                                        <option value="weight_loss" {% if current_user.goal =='weight_loss' %}selected{% endif %}>
                                             Похудение
                                         </option>
-                                        <option value="maintenance" {% if current_user.goal == 'maintenance' %}selected{% endif %}>
+                                        <option value="maintenance" {% if current_user.goal =='maintenance' %}selected{% endif %}>
                                             Поддержание веса
                                         </option>
-                                        <option value="muscle_gain" {% if current_user.goal == 'muscle_gain' %}selected{% endif %}>
+                                        <option value="muscle_gain" {% if current_user.goal =='muscle_gain' %}selected{% endif %}>
                                             Набор мышечной массы
                                         </option>
                                     </select>
@@ -165,6 +165,17 @@
                                     <div class="row">
                                         {% set user_restrictions = current_user.dietary_restrictions.split(',') if current_user.dietary_restrictions else [] %}
                                         <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       name="dietary_restrictions"
+                                                       value="no"
+                                                       id="no"
+                                                       {% if 'no' in user_restrictions %}checked{% endif %}>
+                                                <label class="form-check-label" for="no">
+                                                    Нет
+                                                </label>
+                                            </div>
                                             <div class="form-check">
                                                 <input class="form-check-input"
                                                        type="checkbox"
