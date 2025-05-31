@@ -1,5 +1,7 @@
 import ast
 import re
+from collections import defaultdict
+
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import (
     LoginManager,
@@ -15,7 +17,7 @@ from data import db_session
 from data.user import User
 from data.user_query import User_Query
 from data.food_entry import FoodEntry
-from data.meal_plan import MealPlan
+from data.generated_meal import GeneratedMeal
 
 from gigachat import GigaChat
 from gigachat.models import Chat, Messages, MessagesRole
@@ -252,62 +254,89 @@ def change_password():
     return render_template('change_password.html')
 
 
-def generate_meal_plan_for_user(user_id, target_date):
+@app.route('/meal_planner')
+@login_required
+def meal_planner():
+    try:
+        # Получаем и валидируем дату
+        selected_date_str = request.args.get('date', date.today().isoformat())
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = date.today()
+            flash('Некорректный формат даты. Используется текущая дата.', 'warning')
+
+        # Получаем сгенерированные блюда из БД
+        db_sess = db_session.create_session()
+        generated_meals = db_sess.query(GeneratedMeal).filter(
+            GeneratedMeal.user_id == current_user.id,
+            GeneratedMeal.date == selected_date
+        ).all()
+
+        # Группируем по типам приема пищи с defaultdict
+        meals_by_type = defaultdict(list)
+        for meal in generated_meals:
+            meals_by_type[meal.meal_type].append(meal)
+
+        # Рассчитываем общую статистику с защитой от None
+        def safe_sum(attr):
+            return sum(getattr(meal, attr) or 0 for meal in generated_meals)
+
+        total_calories = safe_sum('calories')
+        total_protein = safe_sum('protein')
+        total_carbs = safe_sum('carbs')
+        total_fat = safe_sum('fat')
+
+        # Статистика съеденного
+        def safe_eaten_sum(attr):
+            return sum(getattr(meal, attr) or 0 for meal in generated_meals if meal.is_eaten)
+
+        eaten_calories = safe_eaten_sum('calories')
+        eaten_protein = safe_eaten_sum('protein')
+        eaten_carbs = safe_eaten_sum('carbs')
+        eaten_fat = safe_eaten_sum('fat')
+
+        # Рассчитываем целевые калории с защитой
+        try:
+            target_calories = answer_bennedict(current_user) or 2000
+        except Exception as e:
+            app.logger.error(f"Error calculating BMR: {str(e)}")
+            target_calories = 2000
+            flash('Ошибка расчета целевых калорий. Используется значение по умолчанию.', 'warning')
+
+        return render_template(
+            'meal_planner.html',
+            selected_date=selected_date,
+            meals_by_type=dict(meals_by_type),  # преобразуем defaultdict в обычный dict
+            total_calories=total_calories,
+            total_protein=total_protein,
+            total_carbs=total_carbs,
+            total_fat=total_fat,
+            eaten_calories=eaten_calories,
+            eaten_protein=eaten_protein,
+            eaten_carbs=eaten_carbs,
+            eaten_fat=eaten_fat,
+            target_calories=target_calories,
+            has_generated_plan=bool(generated_meals),
+            prev_date=(selected_date - timedelta(days=1)).isoformat(),
+            next_date=(selected_date + timedelta(days=1)).isoformat()
+        )
+
+    except Exception as e:
+        app.logger.error(f"Error in meal_planner: {str(e)}")
+        flash('Произошла ошибка при загрузке планировщика питания', 'error')
+        return redirect(url_for('index'))
+
+    finally:
+        db_sess.close()
+
+
+def generate_daily_meal_plan(user_id, target_date):
     """Генерация плана питания для пользователя"""
     db_sess = db_session.create_session()
 
     try:
-        data_string = """
-            daily_menu = [
-        # Завтрак
-        [
-            "Овсяная каша",
-            160,
-            5.7,
-            4.8,
-            25.9
-        ],
-        [
-            "Яйцо вареное",
-            78,
-            6.3,
-            5.7,
-            0.6
-        ],
-
-        # Обед
-        [
-            "Куриная грудка",
-            165,
-            30.6,
-            3.6,
-            0.0
-        ],
-        [
-            "Рис",
-            130,
-            2.7,
-            0.5,
-            28.2
-        ],
-
-        # Ужин
-        [
-            "Кальмар тушеный",
-            122,
-            22.1,
-            1.6,
-            1.1
-        ],
-        [
-            "Капуста брокколи",
-            34,
-            2.8,
-            0.4,
-            6.6
-        ]
-        ]
-            """
+        data_string = generate_chatdiet_response(current_user)
 
         # Удаляем все комментарии
         clean_data = re.sub(r'#.*', '', data_string)
@@ -332,9 +361,9 @@ def generate_meal_plan_for_user(user_id, target_date):
         print(menu_dict)
 
         # Удаляем существующий план на эту дату
-        db_sess.query(MealPlan).filter(
-            MealPlan.user_id == user_id,
-            MealPlan.date == target_date
+        db_sess.query(GeneratedMeal).filter(
+            GeneratedMeal.user_id == user_id,
+            GeneratedMeal.date == target_date
         ).delete()
 
         # Генерируем новый план
@@ -342,17 +371,17 @@ def generate_meal_plan_for_user(user_id, target_date):
             for i in meals:
                 selected_meal = i
 
-                meal_plan = MealPlan(
+                rated_meal = GeneratedMeal(
                     user_id=user_id,
                     date=target_date,
                     meal_type=meal_type,
-                    food_name=selected_meal[0], #name
-                    calories=selected_meal[1], #calories
-                    protein=selected_meal[2], #protein
-                    carbs=selected_meal[3], #carbs
-                    fat=selected_meal[4] #fat
-                )
-                db_sess.add(meal_plan)
+                    food_name=selected_meal[0],  # name
+                    calories=selected_meal[1],  # calories
+                    protein=selected_meal[2],  # protein
+                    carbs=selected_meal[3],  # carbs
+                    fat=selected_meal[4],  # fat
+                    is_eaten=False)
+                db_sess.add(rated_meal)
 
         db_sess.commit()
 
@@ -364,207 +393,50 @@ def generate_meal_plan_for_user(user_id, target_date):
         db_sess.close()
 
 
-@app.route('/meal_planner')
+@app.route('/meal_planner/generate', methods=['POST'])
 @login_required
-def meal_planner():
+def generate_meal_plan():
     try:
-        # Получаем дату
-        selected_date_str = request.args.get('date', date.today().isoformat())
-        try:
-            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            selected_date = date.today()
+        data = request.get_json()
+        target_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        generate_daily_meal_plan(current_user.id, target_date)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
+
+@app.route('/meal_planner/mark_eaten', methods=['POST'])
+@login_required
+def mark_meal_eaten():
+    try:
+        data = request.get_json()
         db_sess = db_session.create_session()
-
-        # Проверяем, есть ли план на эту дату
-        existing_plans = db_sess.query(MealPlan).filter(
-            MealPlan.user_id == current_user.id,
-            MealPlan.date == selected_date
-        ).all()
-
-        has_plan = len(existing_plans) > 0
-
-        if not has_plan:
-            # Показываем страницу генерации плана
-            target_calories = answer_bennedict(current_user)
-            return render_template('generate_plan.html',
-                                   selected_date=selected_date,
-                                   target_calories=target_calories,
-                                   user=current_user)
-
-        # Группируем планы по типам приема пищи
-        meals_by_type = {
-            'breakfast': [],
-            'lunch': [],
-            'dinner': [],
-            'snack': []
-        }
-
-        for meal in existing_plans:
-            if meal.meal_type in meals_by_type:
-                meals_by_type[meal.meal_type].append(meal)
-
-        # Рассчитываем итоги (только съеденные блюда)
-        completed_meals = [meal for meal in existing_plans if meal.is_completed]
-        planned_totals = {
-            'calories': sum(meal.calories or 0 for meal in existing_plans),
-            'protein': sum(meal.protein or 0 for meal in existing_plans),
-            'carbs': sum(meal.carbs or 0 for meal in existing_plans),
-            'fat': sum(meal.fat or 0 for meal in existing_plans)
-        }
-
-        consumed_totals = {
-            'calories': sum(meal.calories or 0 for meal in completed_meals),
-            'protein': sum(meal.protein or 0 for meal in completed_meals),
-            'carbs': sum(meal.carbs or 0 for meal in completed_meals),
-            'fat': sum(meal.fat or 0 for meal in completed_meals)
-        }
-
-        # Целевые значения
-        target_calories = answer_bennedict(current_user)
-        targets = {
-            'calories': target_calories,
-            'protein': int(target_calories * 0.3 / 4),  # 30% от калорий
-            'carbs': int(target_calories * 0.4 / 4),  # 40% от калорий
-            'fat': int(target_calories * 0.3 / 9)  # 30% от калорий
-        }
-
-        # Статистика выполнения
-        total_meals = len(existing_plans)
-        completed_meals_count = len(completed_meals)
-        completion_percentage = (completed_meals_count / total_meals * 100) if total_meals > 0 else 0
-
-        return render_template('meal_planner.html',
-                               selected_date=selected_date,
-                               meals_by_type=meals_by_type,
-                               planned_totals=planned_totals,
-                               consumed_totals=consumed_totals,
-                               targets=targets,
-                               completion_percentage=completion_percentage,
-                               total_meals=total_meals,
-                               completed_meals_count=completed_meals_count,
-                               prev_date=(selected_date - timedelta(days=1)).isoformat(),
-                               next_date=(selected_date + timedelta(days=1)).isoformat())
-
-    except Exception as e:
-        app.logger.error(f"Error in meal_planner: {str(e)}")
-        flash('Произошла ошибка при загрузке планировщика питания', 'error')
-        return redirect(url_for('index'))
-    finally:
-        db_sess.close()
-
-
-
-@app.route('/toggle_meal_completion/<int:meal_id>', methods=['POST'])
-@login_required
-def toggle_meal_completion(meal_id):
-    """Переключение статуса выполнения блюда"""
-    db_sess = db_session.create_session()
-
-    try:
-        meal = db_sess.query(MealPlan).filter(
-            MealPlan.id == meal_id,
-            MealPlan.user_id == current_user.id
-        ).first()
-
-        if meal:
-            meal.is_completed = not meal.is_completed
+        meal = db_sess.query(GeneratedMeal).get(data['meal_id'])
+        if meal and meal.user_id == current_user.id:
+            meal.is_eaten = data['is_eaten']
             db_sess.commit()
-
-            status = "съедено" if meal.is_completed else "не съедено"
-            return jsonify({
-                'success': True,
-                'is_completed': meal.is_completed,
-                'message': f'Блюдо "{meal.food_name}" отмечено как {status}'
-            })
-        else:
-            return jsonify({'success': False, 'message': 'Блюдо не найдено'})
-
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'message': 'Meal not found'}), 404
     except Exception as e:
-        db_sess.rollback()
-        app.logger.error(f"Error toggling meal completion: {str(e)}")
-        return jsonify({'success': False, 'message': 'Ошибка при обновлении статуса'})
-    finally:
-        db_sess.close()
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@app.route('/generate_plan', methods=['POST'])
+@app.route('/meal_planner/regenerate', methods=['POST'])
 @login_required
-def generate_plan():
-    selected_date_str = request.form.get('date', date.today().isoformat())
+def regenerate_meal():
     try:
-        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
-    except ValueError:
-        selected_date = date.today()
-    if generate_meal_plan_for_user(current_user.id, selected_date):
-        print('----------------------')
-        flash('План питания успешно сгенерирован!', 'success')
-    else:
-        flash('Ошибка при генерации плана питания', 'error')
-
-    return redirect(url_for('meal_planner', date=selected_date.isoformat()))
-
-
-@app.route('/add_meal', methods=['POST'])
-@login_required
-def add_meal():
-    db_sess = db_session.create_session()
-
-    try:
-        meal_plan = MealPlan(
-            user_id=current_user.id,
-            date=datetime.strptime(request.form['date'], '%Y-%m-%d').date(),
-            meal_type=request.form['meal_type'],
-            food_name=request.form['food_name'],
-            calories=float(request.form['calories']),
-            protein=float(request.form.get('protein', 0)),
-            carbs=float(request.form.get('carbs', 0)),
-            fat=float(request.form.get('fat', 0))
-        )
-
-        db_sess.add(meal_plan)
-        db_sess.commit()
-        flash('Блюдо успешно добавлено!', 'success')
-
-    except Exception as e:
-        db_sess.rollback()
-        flash('Ошибка при добавлении блюда', 'error')
-        app.logger.error(f"Error adding meal: {str(e)}")
-    finally:
-        db_sess.close()
-
-    return redirect(url_for('meal_planner', date=request.form['date']))
-
-
-@app.route('/delete_meal/<int:meal_id>', methods=['POST'])
-@login_required
-def delete_meal(meal_id):
-    db_sess = db_session.create_session()
-
-    try:
-        meal = db_sess.query(MealPlan).filter(
-            MealPlan.id == meal_id,
-            MealPlan.user_id == current_user.id
-        ).first()
-
-        if meal:
-            meal_date = meal.date
+        data = request.get_json()
+        db_sess = db_session.create_session()
+        meal = db_sess.query(GeneratedMeal).get(data['meal_id'])
+        if meal and meal.user_id == current_user.id:
+            # Здесь можно добавить логику для замены одного блюда
+            # Пока просто удаляем его
             db_sess.delete(meal)
             db_sess.commit()
-            flash('Блюдо удалено', 'success')
-            return redirect(url_for('meal_planner', date=meal_date.isoformat()))
-        else:
-            flash('Блюдо не найдено', 'error')
-
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'message': 'Meal not found'}), 404
     except Exception as e:
-        db_sess.rollback()
-        flash('Ошибка при удалении блюда', 'error')
-        app.logger.error(f"Error deleting meal: {str(e)}")
-    finally:
-        db_sess.close()
-
-    return redirect(url_for('meal_planner'))
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @app.route('/nutrition_analysis')
@@ -689,22 +561,6 @@ def get_days_diet(age, gender, weight, height, activity, goal, dietary):
                 5.7,
                 0.6
             ],
-            [
-                "Хлеб цельнозерновой",
-                121,
-                7.7,
-                1.2,
-                23.0
-            ],
-            
-            # Перекус
-            [
-                "Йогурт греческий",
-                66,
-                5.2,
-                2.0,
-                7.5
-            ],
             
             # Обед
             [
@@ -720,22 +576,6 @@ def get_days_diet(age, gender, weight, height, activity, goal, dietary):
                 2.7,
                 0.5,
                 28.2
-            ],
-            [
-                "Салат из свежих овощей",
-                46,
-                1.7,
-                0.2,
-                9.6
-            ],
-            
-            # Полдник
-            [
-                "Творог нежирный",
-                88,
-                17.2,
-                1.8,
-                1.0
             ],
             
             # Ужин
@@ -756,11 +596,15 @@ def get_days_diet(age, gender, weight, height, activity, goal, dietary):
             ]
             ВОТ ПОДОБНОЕ ТАКОМУ НЕЛЬЗЯ ПИСАТЬ
         Пример рациона на день для мальчика 10 лет с весом 40 кг и ростом 140 см, ведущего сидячий образ жизни, при снижении веса. Рацион включает завтрак, перекус, обед, полдник и ужин.
+        :
+        ВАЖНО: должны быть только Завтрак, Обед, Ужин
+        не должно быть Перекус, Полдник и другие.
+        К каждому времени (Завтрак, Обед, Ужин) должно быть ровно по два блюда
         '''
     messages = [
         Messages(role=MessagesRole.SYSTEM,
                  content="Ты программа, которая выводит только список языка python, ничего другого,"
-                         " и знаешь БЖУ и калорийность всех продуктов питания"),
+                         " и знаешь БЖУ и калорийность всех продуктов питания также ты профессиональный диетолог"),
         Messages(role=MessagesRole.USER, content=text)
     ]
 
@@ -801,6 +645,13 @@ def generate_chatbot_response(message, user):
                  user.dietary_restrictions]
 
     return get_ai_answer(*test_data)
+
+
+def generate_chatdiet_response(user):
+    test_data = [user.age, user.gender, user.weight, user.height, user.activity_level, user.goal,
+                 user.dietary_restrictions]
+
+    return get_days_diet(*test_data)
 
 
 @app.route('/api/clear_chat', methods=['POST'])

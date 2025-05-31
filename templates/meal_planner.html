@@ -4,327 +4,185 @@
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Заголовок с навигацией по датам -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card-custom">
-                <div class="card-body-custom">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap">
-                        <div class="fade-in">
-                            <h2 class="fw-bold mb-1">
-                                <i class="fas fa-calendar-alt text-primary me-2"></i>
-                                Планировщик питания
-                            </h2>
-                            <p class="text-muted mb-0">
-                                Привет, {{ current_user.name }}! Вот твой план на
-                                <strong>{{ selected_date.strftime('%d %B %Y') }}</strong>
-                            </p>
+    <div class="row">
+        <div class="col-md-3 sidebar p-3">
+            <!-- Навигация (оставить без изменений) -->
+        </div>
+
+        <div class="col-md-9 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-utensils"></i> Планировщик питания</h2>
+                <div class="d-flex gap-2">
+                    <input type="date" class="form-control" id="dateSelector"
+                           value="{{ selected_date.isoformat() }}"
+                           onchange="window.location.href='{{ url_for('meal_planner') }}?date=' + this.value">
+
+                    {% if not has_generated_plan %}
+                    <button type="button" class="btn btn-success" onclick="generateMealPlan('{{ selected_date.isoformat() }}')">
+                        <i class="fas fa-magic"></i> Сгенерировать план
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-warning" onclick="generateMealPlan('{{ selected_date.isoformat() }}')">
+                        <i class="fas fa-redo"></i> Новый план
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if not has_generated_plan %}
+            <div class="alert alert-info">
+                <h4><i class="fas fa-info-circle"></i> План питания не сгенерирован</h4>
+                <p>Нажмите кнопку "Сгенерировать план", чтобы получить персональные рекомендации по питанию на выбранную дату.</p>
+            </div>
+            {% else %}
+
+            <!-- Статистика дня -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Общая статистика</h5>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width: {{ (eaten_calories / target_calories * 100) if target_calories > 0 else 0 }}%"
+                                     aria-valuenow="{{ eaten_calories }}" aria-valuemin="0"
+                                     aria-valuemax="{{ target_calories }}">
+                                    {{ "%.0f"|format(eaten_calories) }} / {{ "%.0f"|format(target_calories) }} ккал
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span><i class="fas fa-drumstick-bite text-success"></i> Белки: {{ "%.1f"|format(eaten_protein) }}г</span>
+                                <span><i class="fas fa-bread-slice text-warning"></i> Углеводы: {{ "%.1f"|format(eaten_carbs) }}г</span>
+                                <span><i class="fas fa-tint text-info"></i> Жиры: {{ "%.1f"|format(eaten_fat) }}г</span>
+                            </div>
                         </div>
-                        <div class="d-flex align-items-center gap-2 slide-in-right">
-                            <a href="{{ url_for('meal_planner') }}?date={{ prev_date }}"
-                               class="btn btn-outline-custom">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                            <input type="date" class="form-control form-control-custom"
-                                   value="{{ selected_date.isoformat() }}"
-                                   onchange="window.location.href='{{ url_for('meal_planner') }}?date=' + this.value"
-                                   style="width: auto;">
-                            <a href="{{ url_for('meal_planner') }}?date={{ next_date }}"
-                               class="btn btn-outline-custom">
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Рекомендуемые нормы</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Калории
+                                    <span class="badge bg-primary rounded-pill">{{ "%.0f"|format(target_calories) }} ккал</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Белки
+                                    <span class="badge bg-primary rounded-pill">{{ "%.1f"|format(target_calories * 0.3 / 4) }}г</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Углеводы
+                                    <span class="badge bg-primary rounded-pill">{{ "%.1f"|format(target_calories * 0.5 / 4) }}г</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Жиры
+                                    <span class="badge bg-primary rounded-pill">{{ "%.1f"|format(target_calories * 0.2 / 9) }}г</span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Статистика выполнения плана -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card-custom slide-in-left">
-                <div class="card-header-custom">
-                    <h5 class="fw-bold mb-0">
-                        <i class="fas fa-chart-pie text-info me-2"></i>
-                        Выполнение плана питания
-                    </h5>
-                </div>
-                <div class="card-body-custom">
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <div class="position-relative d-inline-block">
-                                    <div class="progress-circle" data-percentage="{{ completion_percentage }}">
-                                        <span class="progress-text">{{ "%.0f"|format(completion_percentage) }}%</span>
-                                    </div>
-                                </div>
-                                <h6 class="mt-2 fw-bold">Выполнено</h6>
-                                <p class="text-muted small mb-0">{{ completed_meals_count }} из {{ total_meals }} блюд</p>
-                            </div>
+            <!-- План питания -->
+            <div class="row g-4">
+                {% for meal_type, meals in meals_by_type.items() %}
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5>
+                                {% if meal_type == 'Завтрак' %}
+                                    <i class="fas fa-sun text-warning"></i> Завтрак
+                                {% elif meal_type == 'Обед' %}
+                                    <i class="fas fa-sun text-orange"></i> Обед
+                                {% elif meal_type == 'Ужин' %}
+                                    <i class="fas fa-moon text-primary"></i> Ужин
+                                {% else %}
+                                    <i class="fas fa-cookie-bite text-success"></i> {{ meal_type }}
+                                {% endif %}
+                            </h5>
+                            <span class="badge bg-secondary">
+                                {% set meal_calories = meals | sum(attribute='calories') %}
+                                {{ "%.0f"|format(meal_calories or 0) }} ккал
+                            </span>
                         </div>
-                        <div class="col-md-9">
-                            <div class="row g-3">
-                                {% for nutrient, label, color in [
-                                    ('calories', 'Калории', 'primary'),
-                                    ('protein', 'Белки', 'success'),
-                                    ('carbs', 'Углеводы', 'warning'),
-                                    ('fat', 'Жиры', 'info')
-                                ] %}
-                                <div class="col-md-6">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-medium">{{ label }}</span>
-                                        <div class="text-end">
-                                            <div class="small">
-                                                <span class="text-{{ color }} fw-bold">{{ "%.0f"|format(consumed_totals[nutrient]) }}</span>
-                                                <span class="text-muted">/ {{ "%.0f"|format(planned_totals[nutrient]) }}</span>
-                                                {% if nutrient != 'calories' %}г{% endif %}
-                                            </div>
+                        <div class="card-body">
+                            {% if meals %}
+                                {% for meal in meals %}
+                                <div class="meal-item mb-3 p-3 border rounded {{ 'bg-light-success' if meal.is_eaten else 'bg-light' }}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-2 {{ 'text-decoration-line-through text-muted' if meal.is_eaten else '' }}">
+                                                {{ meal.food_name }}
+                                            </h6>
                                             <div class="small text-muted">
-                                                Цель: {{ "%.0f"|format(targets[nutrient]) }}{% if nutrient != 'calories' %}г{% endif %}
+                                                <span class="me-3">
+                                                    <i class="fas fa-fire text-danger"></i> {{ "%.0f"|format(meal.calories) }} ккал
+                                                </span>
+                                                <span class="me-3">
+                                                    <i class="fas fa-drumstick-bite text-success"></i> Б: {{ "%.1f"|format(meal.protein) }}г
+                                                </span>
+                                                <span class="me-3">
+                                                    <i class="fas fa-bread-slice text-warning"></i> У: {{ "%.1f"|format(meal.carbs) }}г
+                                                </span>
+                                                <span>
+                                                    <i class="fas fa-tint text-info"></i> Ж: {{ "%.1f"|format(meal.fat) }}г
+                                                </span>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="progress progress-custom">
-                                        <div class="progress-bar bg-{{ color }}"
-                                             style="width: {{ min(100, (consumed_totals[nutrient] / targets[nutrient] * 100)) }}%">
-                                        </div>
-                                        <div class="progress-bar bg-light opacity-50"
-                                             style="width: {{ max(0, min(100, ((planned_totals[nutrient] - consumed_totals[nutrient]) / targets[nutrient] * 100))) }}%">
+                                        <div class="d-flex flex-column gap-1">
+                                            <!-- Чекбокс для отметки съеденного -->
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       id="meal_{{ meal.id }}"
+                                                       {{ 'checked' if meal.is_eaten else '' }}
+                                                       onchange="markMealEaten({{ meal.id }}, this.checked)">
+                                                <label class="form-check-label small" for="meal_{{ meal.id }}">
+                                                    Съедено
+                                                </label>
+                                            </div>
+                                            <!-- Кнопка замены блюда -->
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    onclick="regenerateMeal({{ meal.id }})"
+                                                    title="Заменить блюдо">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                                 {% endfor %}
-                            </div>
+                            {% else %}
+                                <p class="text-muted text-center">Блюда не сгенерированы</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-        </div>
-    </div>
 
-    <!-- Приемы пищи -->
-    <div class="row g-4 mb-4">
-        {% for meal_type, display_name, icon_class, icon_name in [
-            ('breakfast', 'Завтрак', 'breakfast-icon', 'coffee'),
-            ('lunch', 'Обед', 'lunch-icon', 'sun'),
-            ('dinner', 'Ужин', 'dinner-icon', 'moon'),
-            ('snack', 'Перекус', 'snack-icon', 'apple-alt')
-        ] %}
-        <div class="col-lg-6">
-            <div class="card-custom h-100 slide-in-{{ 'left' if loop.index % 2 == 1 else 'right' }}">
-                <div class="card-header-custom">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="meal-icon {{ icon_class }} me-3">
-                                <i class="fas fa-{{ icon_name }}"></i>
-                            </div>
-                            <div>
-                                <h5 class="fw-bold mb-0">{{ display_name }}</h5>
-                                {% set meal_count = meals_by_type[meal_type]|length %}
-                                {% set completed_count = meals_by_type[meal_type]|selectattr('is_completed')|list|length %}
-                                <small class="text-muted">{{ completed_count }}/{{ meal_count }} выполнено</small>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary-custom btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#addMealModal"
-                                onclick="setMealType('{{ meal_type }}')">
-                            <i class="fas fa-plus me-1"></i>Добавить
-                        </button>
-                    </div>
+            <!-- Рекомендации -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-lightbulb"></i> Рекомендации</h5>
                 </div>
-                <div class="card-body-custom">
-                    {% if meals_by_type[meal_type] %}
-                        <div class="space-y-3">
-                            {% for meal in meals_by_type[meal_type] %}
-                            <div class="meal-item d-flex justify-content-between align-items-start p-3 rounded-3 mb-3
-                                        {{ 'bg-success bg-opacity-10 border border-success border-opacity-25' if meal.is_completed else 'bg-light' }}">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="form-check me-3">
-                                            <input class="form-check-input" type="checkbox"
-                                                   {{ 'checked' if meal.is_completed }}
-                                                   onchange="toggleMealCompletion({{ meal.id }})"
-                                                   id="meal_{{ meal.id }}">
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-bold {{ 'text-decoration-line-through text-muted' if meal.is_completed else '' }}">
-                                                {{ meal.food_name }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-1 ms-5">
-                                        <span class="badge {{ 'bg-success' if meal.is_completed else 'bg-primary' }}">
-                                            {{ "%.0f"|format(meal.calories or 0) }} ккал
-                                        </span>
-                                        {% if meal.protein %}
-                                        <span class="badge {{ 'bg-success' if meal.is_completed else 'bg-secondary' }}">
-                                            Б: {{ "%.1f"|format(meal.protein) }}г
-                                        </span>
-                                        {% endif %}
-                                        {% if meal.carbs %}
-                                        <span class="badge {{ 'bg-success' if meal.is_completed else 'bg-warning text-dark' }}">
-                                            У: {{ "%.1f"|format(meal.carbs) }}г
-                                        </span>
-                                        {% endif %}
-                                        {% if meal.fat %}
-                                        <span class="badge {{ 'bg-success' if meal.is_completed else 'bg-info' }}">
-                                            Ж: {{ "%.1f"|format(meal.fat) }}г
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <form action="{{ url_for('delete_meal', meal_id=meal.id) }}" method="POST" class="d-inline ms-2">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm"
-                                            onclick="return confirm('Удалить это блюдо?')"
-                                            title="Удалить блюдо">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                            {% endfor %}
+                <div class="card-body">
+                    {% if eaten_calories < target_calories * 0.8 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Вы потребляете недостаточно калорий. Попробуйте добавить питательные перекусы.
                         </div>
-                        <div class="border-top pt-3 mt-3">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="small text-muted">Запланировано:</span>
-                                        <span class="small fw-bold">
-                                            {{ "%.0f"|format(meals_by_type[meal_type] | sum(attribute='calories') or 0) }} ккал
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="small text-muted">Съедено:</span>
-                                        <span class="small fw-bold text-success">
-                                            {{ "%.0f"|format(meals_by_type[meal_type] | selectattr('is_completed') | sum(attribute='calories') or 0) }} ккал
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                    {% elif eaten_calories > target_calories * 1.2 %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> Вы превышаете рекомендуемую норму калорий. Обратите внимание на размер порций.
                         </div>
                     {% else %}
-                        <div class="empty-state">
-                            <i class="fas fa-utensils"></i>
-                            <h6>Блюда не добавлены</h6>
-                            <p>Нажмите "Добавить", чтобы добавить блюдо в {{ display_name.lower() }}</p>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Вы придерживаетесь рекомендуемой нормы калорий. Так держать!
                         </div>
                     {% endif %}
                 </div>
             </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Итоги дня -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card-custom fade-in">
-                <div class="card-header-custom">
-                    <h5 class="fw-bold mb-0">
-                        <i class="fas fa-chart-bar text-info me-2"></i>
-                        Итоги дня
-                    </h5>
-                </div>
-                <div class="card-body-custom">
-                    <div class="row g-4 text-center">
-                        <div class="col-md-3">
-                            <div class="stats-card">
-                                <div class="stats-number text-primary">{{ "%.0f"|format(consumed_totals.calories) }}</div>
-                                <div class="stats-label">Съедено калорий</div>
-                                <div class="small text-muted mt-1">из {{ "%.0f"|format(planned_totals.calories) }} запланированных</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats-card">
-                                <div class="stats-number text-success">{{ "%.1f"|format(consumed_totals.protein) }}г</div>
-                                <div class="stats-label">Белки</div>
-                                <div class="small text-muted mt-1">из {{ "%.1f"|format(planned_totals.protein) }}г</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats-card">
-                                <div class="stats-number text-warning">{{ "%.1f"|format(consumed_totals.carbs) }}г</div>
-                                <div class="stats-label">Углеводы</div>
-                                <div class="small text-muted mt-1">из {{ "%.1f"|format(planned_totals.carbs) }}г</div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats-card">
-                                <div class="stats-number text-info">{{ "%.1f"|format(consumed_totals.fat) }}г</div>
-                                <div class="stats-label">Жиры</div>
-                                <div class="small text-muted mt-1">из {{ "%.1f"|format(planned_totals.fat) }}г</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для добавления блюда -->
-<div class="modal fade" id="addMealModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content modal-content-custom">
-            <div class="modal-header modal-header-custom">
-                <h5 class="modal-title fw-bold">
-                    <i class="fas fa-plus-circle text-primary me-2"></i>
-                    Добавить блюдо
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="{{ url_for('add_meal') }}" method="POST">
-                <div class="modal-body modal-body-custom">
-                    <input type="hidden" name="date" value="{{ selected_date.isoformat() }}">
-                    <input type="hidden" name="meal_type" id="modalMealType">
-
-                    <div class="mb-4">
-                        <label for="food_name" class="form-label form-label-custom">
-                            <i class="fas fa-utensils me-1"></i>Название блюда
-                        </label>
-                        <input type="text" class="form-control form-control-custom" name="food_name" required
-                               placeholder="Например: Овсяная каша с ягодами">
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="calories" class="form-label form-label-custom">
-                                <i class="fas fa-fire me-1"></i>Калории
-                            </label>
-                            <input type="number" class="form-control form-control-custom" name="calories" step="0.1" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="protein" class="form-label form-label-custom">
-                                <i class="fas fa-dumbbell me-1"></i>Белки (г)
-                            </label>
-                            <input type="number" class="form-control form-control-custom" name="protein" step="0.1" value="0">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="carbs" class="form-label form-label-custom">
-                                <i class="fas fa-bread-slice me-1"></i>Углеводы (г)
-                            </label>
-                            <input type="number" class="form-control form-control-custom" name="carbs" step="0.1" value="0">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="fat" class="form-label form-label-custom">
-                                <i class="fas fa-cheese me-1"></i>Жиры (г)
-                            </label>
-                            <input type="number" class="form-control form-control-custom" name="fat" step="0.1" value="0">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer modal-footer-custom">
-                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Отмена
-                    </button>
-                    <button type="submit" class="btn btn-primary-custom">
-                        <i class="fas fa-save me-1"></i>Добавить блюдо
-                    </button>
-                </div>
-            </form>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -332,124 +190,64 @@
 
 {% block scripts %}
 <script>
-function setMealType(mealType) {
-    document.getElementById('modalMealType').value = mealType;
-
-    // Обновляем заголовок модального окна
-    const titles = {
-        'breakfast': 'Добавить блюдо в завтрак',
-        'lunch': 'Добавить блюдо в обед',
-        'dinner': 'Добавить блюдо в ужин',
-        'snack': 'Добавить перекус'
-    };
-
-    document.querySelector('#addMealModal .modal-title').innerHTML =
-        '<i class="fas fa-plus-circle text-primary me-2"></i>' + titles[mealType];
-}
-
-function toggleMealCompletion(mealId) {
-    fetch(`/toggle_meal_completion/${mealId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Перезагружаем страницу для обновления статистики
-            location.reload();
-        } else {
-            alert('Ошибка: ' + data.message);
-            // Возвращаем чекбокс в исходное состояние
-            const checkbox = document.getElementById(`meal_${mealId}`);
-            checkbox.checked = !checkbox.checked;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Произошла ошибка при обновлении статуса');
-        // Возвращаем чекбокс в исходное состояние
-        const checkbox = document.getElementById(`meal_${mealId}`);
-        checkbox.checked = !checkbox.checked;
-    });
-}
-
-// Анимация прогресс-баров при загрузке
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-        const progressBars = document.querySelectorAll('.progress-bar');
-        progressBars.forEach(bar => {
-            const width = bar.style.width;
-            bar.style.width = '0%';
-            setTimeout(() => {
-                bar.style.width = width;
-            }, 100);
+    function generateMealPlan(date) {
+        fetch('/meal_planner/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ date: date })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Ошибка при генерации плана: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при генерации плана');
         });
-    }, 500);
-
-    // Анимация круглого прогресса
-    const progressCircle = document.querySelector('.progress-circle');
-    if (progressCircle) {
-        const percentage = progressCircle.dataset.percentage;
-        animateProgressCircle(progressCircle, percentage);
     }
-});
 
-function animateProgressCircle(element, percentage) {
-    const circumference = 2 * Math.PI * 45; // радиус 45px
-    const offset = circumference - (percentage / 100) * circumference;
+    function markMealEaten(mealId, isEaten) {
+        fetch('/meal_planner/mark_eaten', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                meal_id: mealId,
+                is_eaten: isEaten
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Ошибка при обновлении статуса блюда');
+                window.location.reload();
+            }
+        });
+    }
 
-    element.innerHTML = `
-        <svg width="100" height="100" class="progress-ring">
-            <circle cx="50" cy="50" r="45" stroke="#e9ecef" stroke-width="8" fill="transparent"/>
-            <circle cx="50" cy="50" r="45" stroke="#6366f1" stroke-width="8" fill="transparent"
-                    stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
-                    style="transition: stroke-dashoffset 1s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%;"/>
-        </svg>
-        <span class="progress-text">${Math.round(percentage)}%</span>
-    `;
-}
+    function regenerateMeal(mealId) {
+        fetch('/meal_planner/regenerate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ meal_id: mealId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Ошибка при замене блюда: ' + data.message);
+            }
+        });
+    }
 </script>
-
-<style>
-.progress-circle {
-    position: relative;
-    width: 100px;
-    height: 100px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.progress-text {
-    position: absolute;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--primary-color);
-}
-
-.meal-item {
-    transition: all 0.3s ease;
-}
-
-.meal-item:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.form-check-input:checked {
-    background-color: var(--success-color);
-    border-color: var(--success-color);
-}
-
-.progress-custom {
-    position: relative;
-    overflow: visible;
-}
-
-.progress-bar {
-    transition: width 1s ease-in-out;
-}
-</style>
 {% endblock %}
