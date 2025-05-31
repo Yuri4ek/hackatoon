@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Генерация плана питания - NutriPlan{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="text-center mb-5 fade-in">
+                <div class="d-inline-flex align-items-center justify-content-center mb-4"
+                     style="width: 120px; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%;">
+                    <i class="fas fa-magic text-white" style="font-size: 3rem;"></i>
+                </div>
+
+                <h1 class="display-4 fw-bold text-dark mb-4">
+                    Создайте свой идеальный план питания!
+                </h1>
+
+                <p class="lead text-muted mb-0" style="max-width: 700px; margin: 0 auto;">
+                    У вас пока нет персонального плана питания на <strong>{{ selected_date.strftime('%d %B %Y') }}</strong>.
+                    Давайте создадим индивидуальный план, учитывающий ваши цели, предпочтения и диетические ограничения.
+                </p>
+            </div>
+
+            <!-- Информация о пользователе -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card-custom h-100 slide-in-left">
+                        <div class="card-header-custom">
+                            <h5 class="fw-bold mb-0">
+                                <i class="fas fa-user text-primary me-2"></i>Ваш профиль
+                            </h5>
+                        </div>
+                        <div class="card-body-custom">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Имя:</span>
+                                        <strong>{{ user.name or 'Не указано' }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Возраст:</span>
+                                        <strong>{{ user.age or 'Не указан' }} лет</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Вес:</span>
+                                        <strong>{{ user.weight or 'Не указан' }} кг</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Рост:</span>
+                                        <strong>{{ user.height or 'Не указан' }} см</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card-custom h-100 slide-in-right">
+                        <div class="card-header-custom">
+                            <h5 class="fw-bold mb-0">
+                                <i class="fas fa-bullseye text-success me-2"></i>Ваши цели
+                            </h5>
+                        </div>
+                        <div class="card-body-custom">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">Калории в день:</span>
+                                        <span class="badge bg-primary fs-6 px-3 py-2">{{ target_calories }} ккал</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">Цель:</span>
+                                        <span class="badge bg-success fs-6 px-3 py-2">
+                                            {% if user.goal == 'weight_loss' %}Похудение
+                                            {% elif user.goal == 'muscle_gain' %}Набор массы
+                                            {% else %}Поддержание{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">Активность:</span>
+                                        <span class="badge bg-info fs-6 px-3 py-2">
+                                            {% if user.activity_level == 'sedentary' %}Низкая
+                                            {% elif user.activity_level == 'light' %}Легкая
+                                            {% elif user.activity_level == 'moderate' %}Умеренная
+                                            {% elif user.activity_level == 'active' %}Высокая
+                                            {% else %}Очень высокая{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if user.dietary_restrictions %}
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">Ограничения:</span>
+                                        <span class="badge bg-warning fs-6 px-3 py-2">Есть</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Что включает план -->
+            <div class="card-custom mb-5 fade-in">
+                <div class="card-header-custom">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-list-check text-warning me-2"></i>Что включает ваш персональный план
+                    </h5>
+                </div>
+                <div class="card-body-custom">
+                    <div class="row g-4">
+                        <div class="col-md-3 text-center">
+                            <div class="meal-icon breakfast-icon mx-auto mb-3">
+                                <i class="fas fa-coffee"></i>
+                            </div>
+                            <h6 class="fw-bold">Завтрак</h6>
+                            <p class="text-muted small mb-0">Энергичное начало дня</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="meal-icon lunch-icon mx-auto mb-3">
+                                <i class="fas fa-sun"></i>
+                            </div>
+                            <h6 class="fw-bold">Обед</h6>
+                            <p class="text-muted small mb-0">Сбалансированный прием пищи</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="meal-icon dinner-icon mx-auto mb-3">
+                                <i class="fas fa-moon"></i>
+                            </div>
+                            <h6 class="fw-bold">Ужин</h6>
+                            <p class="text-muted small mb-0">Легкий и питательный</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="meal-icon snack-icon mx-auto mb-3">
+                                <i class="fas fa-apple-alt"></i>
+                            </div>
+                            <h6 class="fw-bold">Перекус</h6>
+                            <p class="text-muted small mb-0">Здоровые снеки</p>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <i class="fas fa-calculator text-primary mb-2" style="font-size: 2rem;"></i>
+                            <h6 class="fw-bold">Точный подсчет БЖУ</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <i class="fas fa-target text-success mb-2" style="font-size: 2rem;"></i>
+                            <h6 class="fw-bold">Учет ваших целей</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <i class="fas fa-heart text-danger mb-2" style="font-size: 2rem;"></i>
+                            <h6 class="fw-bold">Здоровое питание</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <i class="fas fa-chart-line text-info mb-2" style="font-size: 2rem;"></i>
+                            <h6 class="fw-bold">Отслеживание прогресса</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопка генерации -->
+            <div class="text-center slide-in-right">
+                <form action="{{ url_for('generate_plan') }}" method="POST" id="generateForm">
+                    <input type="hidden" name="date" value="{{ selected_date.isoformat() }}">
+                    <button type="submit" class="btn btn-primary-custom btn-lg px-5 py-3" id="generateBtn">
+                        <i class="fas fa-sparkles me-2"></i>
+                        Сгенерировать план питания
+                    </button>
+                </form>
+
+                <p class="text-muted mt-3">
+                    <i class="fas fa-clock me-1"></i>
+                    Генерация займет несколько секунд
+                </p>
+
+                <div class="mt-4">
+                    <small class="text-muted">
+                        План будет создан с учетом ваших индивидуальных параметров и целей
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('generateForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('generateBtn');
+    btn.innerHTML = '<div class="loading-spinner me-2"></div>Генерируем ваш план...';
+    btn.disabled = true;
+
+    // Добавляем класс загрузки
+    btn.classList.add('loading');
+
+    // Логируем для отладки
+    console.log('Form submitted, generating meal plan...');
+});
+
+// Проверяем, есть ли ошибки при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Generate plan page loaded');
+
+    // Анимация появления элементов
+    const elements = document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right');
+    elements.forEach((el, index) => {
+        setTimeout(() => {
+            el.style.opacity = '1';
+            el.style.transform = 'translateX(0) translateY(0)';
+        }, index * 200);
+    });
+});
+</script>
+
+<style>
+.fade-in, .slide-in-left, .slide-in-right {
+    opacity: 0;
+    transition: all 0.6s ease;
+}
+
+.slide-in-left {
+    transform: translateX(-30px);
+}
+
+.slide-in-right {
+    transform: translateX(30px);
+}
+
+.fade-in {
+    transform: translateY(20px);
+}
+
+.btn-primary-custom.loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+</style>
+{% endblock %}

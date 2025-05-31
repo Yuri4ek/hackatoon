@@ -1,5 +1,8 @@
+import ast
+import re
 from random import random
 
+import matches
 from flask import Flask, render_template, redirect, url_for, flash, abort, request, jsonify
 from flask_login import (
     LoginManager,
@@ -256,36 +259,79 @@ def generate_meal_plan_for_user(user_id, target_date):
     db_sess = db_session.create_session()
 
     try:
-        user = db_sess.get(User, user_id)
-        target_calories = answer_bennedict(user)
+        data_string = """
+            daily_menu = [
+        # Завтрак
+        [
+            "Овсяная каша",
+            160,
+            5.7,
+            4.8,
+            25.9
+        ],
+        [
+            "Яйцо вареное",
+            78,
+            6.3,
+            5.7,
+            0.6
+        ],
 
-        # Примерные блюда для генерации
-        meal_database = {
-            'breakfast': [
-                {'name': 'Овсяная каша с ягодами', 'calories': 320, 'protein': 12, 'carbs': 58, 'fat': 6},
-                {'name': 'Омлет с овощами', 'calories': 280, 'protein': 20, 'carbs': 8, 'fat': 18},
-                {'name': 'Творог с фруктами', 'calories': 250, 'protein': 18, 'carbs': 25, 'fat': 8},
-                {'name': 'Гранола с йогуртом', 'calories': 350, 'protein': 15, 'carbs': 45, 'fat': 12},
-            ],
-            'lunch': [
-                {'name': 'Куриная грудка с рисом', 'calories': 450, 'protein': 35, 'carbs': 45, 'fat': 8},
-                {'name': 'Рыба с овощами', 'calories': 380, 'protein': 30, 'carbs': 20, 'fat': 15},
-                {'name': 'Говядина с гречкой', 'calories': 420, 'protein': 32, 'carbs': 35, 'fat': 12},
-                {'name': 'Салат с курицей', 'calories': 320, 'protein': 28, 'carbs': 15, 'fat': 18},
-            ],
-            'dinner': [
-                {'name': 'Лосось запеченный', 'calories': 350, 'protein': 40, 'carbs': 2, 'fat': 18},
-                {'name': 'Куриное филе с салатом', 'calories': 300, 'protein': 35, 'carbs': 10, 'fat': 12},
-                {'name': 'Творожная запеканка', 'calories': 280, 'protein': 22, 'carbs': 20, 'fat': 10},
-                {'name': 'Рыбные котлеты с овощами', 'calories': 320, 'protein': 25, 'carbs': 15, 'fat': 16},
-            ],
-            'snack': [
-                {'name': 'Греческий йогурт с орехами', 'calories': 180, 'protein': 15, 'carbs': 8, 'fat': 10},
-                {'name': 'Яблоко с арахисовой пастой', 'calories': 200, 'protein': 8, 'carbs': 25, 'fat': 8},
-                {'name': 'Протеиновый коктейль', 'calories': 150, 'protein': 25, 'carbs': 5, 'fat': 3},
-                {'name': 'Орехи и сухофрукты', 'calories': 220, 'protein': 6, 'carbs': 20, 'fat': 14},
-            ]
+        # Обед
+        [
+            "Куриная грудка",
+            165,
+            30.6,
+            3.6,
+            0.0
+        ],
+        [
+            "Рис",
+            130,
+            2.7,
+            0.5,
+            28.2
+        ],
+
+        # Ужин
+        [
+            "Кальмар тушеный",
+            122,
+            22.1,
+            1.6,
+            1.1
+        ],
+        [
+            "Капуста брокколи",
+            34,
+            2.8,
+            0.4,
+            6.6
+        ]
+        ]
+            """
+
+        # Удаляем все комментарии
+        clean_data = re.sub(r'#.*', '', data_string)
+
+        # Затем извлекаем список
+        start = clean_data.find('[')
+        end = clean_data.rfind(']') + 1
+        list_str = clean_data[start:end]
+
+        daily_menu = ast.literal_eval(list_str)
+        print(daily_menu)
+
+        # Автоматическое распределение по приемам пищи
+        meal_names = ["Завтрак", "Обед", "Ужин"]
+        meals_count = len(daily_menu) // 2  # Определяем количество приемов пищи
+
+        menu_dict = {
+            meal_names[i]: daily_menu[i * 2: (i + 1) * 2]
+            for i in range(meals_count)
         }
+
+        print(menu_dict)
 
         # Удаляем существующий план на эту дату
         db_sess.query(MealPlan).filter(
@@ -294,23 +340,23 @@ def generate_meal_plan_for_user(user_id, target_date):
         ).delete()
 
         # Генерируем новый план
-        for meal_type, meals in meal_database.items():
-            selected_meal = random.choice(meals)
+        for meal_type, meals in menu_dict.items():
+            for i in meals:
+                selected_meal = i
 
-            meal_plan = MealPlan(
-                user_id=user_id,
-                date=target_date,
-                meal_type=meal_type,
-                food_name=selected_meal['name'],
-                calories=selected_meal['calories'],
-                protein=selected_meal['protein'],
-                carbs=selected_meal['carbs'],
-                fat=selected_meal['fat']
-            )
-            db_sess.add(meal_plan)
+                meal_plan = MealPlan(
+                    user_id=user_id,
+                    date=target_date,
+                    meal_type=meal_type,
+                    food_name=selected_meal[0], #name
+                    calories=selected_meal[1], #calories
+                    protein=selected_meal[2], #protein
+                    carbs=selected_meal[3], #carbs
+                    fat=selected_meal[4] #fat
+                )
+                db_sess.add(meal_plan)
 
         db_sess.commit()
-        return True
 
     except Exception as e:
         db_sess.rollback()
@@ -361,12 +407,20 @@ def meal_planner():
             if meal.meal_type in meals_by_type:
                 meals_by_type[meal.meal_type].append(meal)
 
-        # Рассчитываем итоги
-        totals = {
+        # Рассчитываем итоги (только съеденные блюда)
+        completed_meals = [meal for meal in existing_plans if meal.is_completed]
+        planned_totals = {
             'calories': sum(meal.calories or 0 for meal in existing_plans),
             'protein': sum(meal.protein or 0 for meal in existing_plans),
             'carbs': sum(meal.carbs or 0 for meal in existing_plans),
             'fat': sum(meal.fat or 0 for meal in existing_plans)
+        }
+
+        consumed_totals = {
+            'calories': sum(meal.calories or 0 for meal in completed_meals),
+            'protein': sum(meal.protein or 0 for meal in completed_meals),
+            'carbs': sum(meal.carbs or 0 for meal in completed_meals),
+            'fat': sum(meal.fat or 0 for meal in completed_meals)
         }
 
         # Целевые значения
@@ -378,11 +432,20 @@ def meal_planner():
             'fat': int(target_calories * 0.3 / 9)  # 30% от калорий
         }
 
+        # Статистика выполнения
+        total_meals = len(existing_plans)
+        completed_meals_count = len(completed_meals)
+        completion_percentage = (completed_meals_count / total_meals * 100) if total_meals > 0 else 0
+
         return render_template('meal_planner.html',
                                selected_date=selected_date,
                                meals_by_type=meals_by_type,
-                               totals=totals,
+                               planned_totals=planned_totals,
+                               consumed_totals=consumed_totals,
                                targets=targets,
+                               completion_percentage=completion_percentage,
+                               total_meals=total_meals,
+                               completed_meals_count=completed_meals_count,
                                prev_date=(selected_date - timedelta(days=1)).isoformat(),
                                next_date=(selected_date + timedelta(days=1)).isoformat())
 
@@ -390,6 +453,40 @@ def meal_planner():
         app.logger.error(f"Error in meal_planner: {str(e)}")
         flash('Произошла ошибка при загрузке планировщика питания', 'error')
         return redirect(url_for('index'))
+    finally:
+        db_sess.close()
+
+
+
+@app.route('/toggle_meal_completion/<int:meal_id>', methods=['POST'])
+@login_required
+def toggle_meal_completion(meal_id):
+    """Переключение статуса выполнения блюда"""
+    db_sess = db_session.create_session()
+
+    try:
+        meal = db_sess.query(MealPlan).filter(
+            MealPlan.id == meal_id,
+            MealPlan.user_id == current_user.id
+        ).first()
+
+        if meal:
+            meal.is_completed = not meal.is_completed
+            db_sess.commit()
+
+            status = "съедено" if meal.is_completed else "не съедено"
+            return jsonify({
+                'success': True,
+                'is_completed': meal.is_completed,
+                'message': f'Блюдо "{meal.food_name}" отмечено как {status}'
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Блюдо не найдено'})
+
+    except Exception as e:
+        db_sess.rollback()
+        app.logger.error(f"Error toggling meal completion: {str(e)}")
+        return jsonify({'success': False, 'message': 'Ошибка при обновлении статуса'})
     finally:
         db_sess.close()
 
@@ -402,8 +499,8 @@ def generate_plan():
         selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
     except ValueError:
         selected_date = date.today()
-
     if generate_meal_plan_for_user(current_user.id, selected_date):
+        print('----------------------')
         flash('План питания успешно сгенерирован!', 'success')
     else:
         flash('Ошибка при генерации плана питания', 'error')
@@ -732,6 +829,13 @@ def clear_chat():
         # В случае ошибки откатываем изменения и возвращаем ошибку
         db_sess.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+def generate_chatdiet_response(user):
+    test_data = [user.age, user.gender, user.weight, user.height, user.activity_level, user.goal,
+                 user.dietary_restrictions]
+
+    return get_days_diet(*test_data)
 
 
 @app.route('/api/chatbot/history')
