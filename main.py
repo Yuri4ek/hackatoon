@@ -1,9 +1,6 @@
 import ast
 import re
-from random import random
-
-import matches
-from flask import Flask, render_template, redirect, url_for, flash, abort, request, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import (
     LoginManager,
     login_user,
@@ -11,7 +8,7 @@ from flask_login import (
     logout_user,
     current_user,
 )
-from flask_restful import abort, Api
+from flask_restful import Api
 
 from datetime import datetime, date, timedelta
 from data import db_session
