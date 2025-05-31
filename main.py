@@ -1,3 +1,5 @@
+from random import random
+
 from flask import Flask, render_template, redirect, url_for, flash, abort, request, jsonify
 from flask_login import (
     LoginManager,
@@ -249,25 +251,225 @@ def change_password():
     return render_template('change_password.html')
 
 
-# Остальные маршруты остаются без изменений...
+def generate_meal_plan_for_user(user_id, target_date):
+    """Генерация плана питания для пользователя"""
+    db_sess = db_session.create_session()
+
+    try:
+        user = db_sess.get(User, user_id)
+        target_calories = answer_bennedict(user)
+
+        # Примерные блюда для генерации
+        meal_database = {
+            'breakfast': [
+                {'name': 'Овсяная каша с ягодами', 'calories': 320, 'protein': 12, 'carbs': 58, 'fat': 6},
+                {'name': 'Омлет с овощами', 'calories': 280, 'protein': 20, 'carbs': 8, 'fat': 18},
+                {'name': 'Творог с фруктами', 'calories': 250, 'protein': 18, 'carbs': 25, 'fat': 8},
+                {'name': 'Гранола с йогуртом', 'calories': 350, 'protein': 15, 'carbs': 45, 'fat': 12},
+            ],
+            'lunch': [
+                {'name': 'Куриная грудка с рисом', 'calories': 450, 'protein': 35, 'carbs': 45, 'fat': 8},
+                {'name': 'Рыба с овощами', 'calories': 380, 'protein': 30, 'carbs': 20, 'fat': 15},
+                {'name': 'Говядина с гречкой', 'calories': 420, 'protein': 32, 'carbs': 35, 'fat': 12},
+                {'name': 'Салат с курицей', 'calories': 320, 'protein': 28, 'carbs': 15, 'fat': 18},
+            ],
+            'dinner': [
+                {'name': 'Лосось запеченный', 'calories': 350, 'protein': 40, 'carbs': 2, 'fat': 18},
+                {'name': 'Куриное филе с салатом', 'calories': 300, 'protein': 35, 'carbs': 10, 'fat': 12},
+                {'name': 'Творожная запеканка', 'calories': 280, 'protein': 22, 'carbs': 20, 'fat': 10},
+                {'name': 'Рыбные котлеты с овощами', 'calories': 320, 'protein': 25, 'carbs': 15, 'fat': 16},
+            ],
+            'snack': [
+                {'name': 'Греческий йогурт с орехами', 'calories': 180, 'protein': 15, 'carbs': 8, 'fat': 10},
+                {'name': 'Яблоко с арахисовой пастой', 'calories': 200, 'protein': 8, 'carbs': 25, 'fat': 8},
+                {'name': 'Протеиновый коктейль', 'calories': 150, 'protein': 25, 'carbs': 5, 'fat': 3},
+                {'name': 'Орехи и сухофрукты', 'calories': 220, 'protein': 6, 'carbs': 20, 'fat': 14},
+            ]
+        }
+
+        # Удаляем существующий план на эту дату
+        db_sess.query(MealPlan).filter(
+            MealPlan.user_id == user_id,
+            MealPlan.date == target_date
+        ).delete()
+
+        # Генерируем новый план
+        for meal_type, meals in meal_database.items():
+            selected_meal = random.choice(meals)
+
+            meal_plan = MealPlan(
+                user_id=user_id,
+                date=target_date,
+                meal_type=meal_type,
+                food_name=selected_meal['name'],
+                calories=selected_meal['calories'],
+                protein=selected_meal['protein'],
+                carbs=selected_meal['carbs'],
+                fat=selected_meal['fat']
+            )
+            db_sess.add(meal_plan)
+
+        db_sess.commit()
+        return True
+
+    except Exception as e:
+        db_sess.rollback()
+        app.logger.error(f"Error generating meal plan: {str(e)}")
+        return False
+    finally:
+        db_sess.close()
+
+
 @app.route('/meal_planner')
 @login_required
 def meal_planner():
-    selected_date = request.args.get('date', date.today().isoformat())
-    selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    try:
+        # Получаем дату
+        selected_date_str = request.args.get('date', date.today().isoformat())
+        try:
+            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = date.today()
 
-    meal_plans = MealPlan.query.filter_by(user_id=current_user.id, date=selected_date).all()
+        db_sess = db_session.create_session()
 
-    meals_by_type = {
-        'breakfast': [m for m in meal_plans if m.meal_type == 'breakfast'],
-        'lunch': [m for m in meal_plans if m.meal_type == 'lunch'],
-        'dinner': [m for m in meal_plans if m.meal_type == 'dinner'],
-        'snack': [m for m in meal_plans if m.meal_type == 'snack']
-    }
+        # Проверяем, есть ли план на эту дату
+        existing_plans = db_sess.query(MealPlan).filter(
+            MealPlan.user_id == current_user.id,
+            MealPlan.date == selected_date
+        ).all()
 
-    return render_template('meal_planner.html',
-                           selected_date=selected_date,
-                           meals_by_type=meals_by_type)
+        has_plan = len(existing_plans) > 0
+
+        if not has_plan:
+            # Показываем страницу генерации плана
+            target_calories = answer_bennedict(current_user)
+            return render_template('generate_plan.html',
+                                   selected_date=selected_date,
+                                   target_calories=target_calories,
+                                   user=current_user)
+
+        # Группируем планы по типам приема пищи
+        meals_by_type = {
+            'breakfast': [],
+            'lunch': [],
+            'dinner': [],
+            'snack': []
+        }
+
+        for meal in existing_plans:
+            if meal.meal_type in meals_by_type:
+                meals_by_type[meal.meal_type].append(meal)
+
+        # Рассчитываем итоги
+        totals = {
+            'calories': sum(meal.calories or 0 for meal in existing_plans),
+            'protein': sum(meal.protein or 0 for meal in existing_plans),
+            'carbs': sum(meal.carbs or 0 for meal in existing_plans),
+            'fat': sum(meal.fat or 0 for meal in existing_plans)
+        }
+
+        # Целевые значения
+        target_calories = answer_bennedict(current_user)
+        targets = {
+            'calories': target_calories,
+            'protein': int(target_calories * 0.3 / 4),  # 30% от калорий
+            'carbs': int(target_calories * 0.4 / 4),  # 40% от калорий
+            'fat': int(target_calories * 0.3 / 9)  # 30% от калорий
+        }
+
+        return render_template('meal_planner.html',
+                               selected_date=selected_date,
+                               meals_by_type=meals_by_type,
+                               totals=totals,
+                               targets=targets,
+                               prev_date=(selected_date - timedelta(days=1)).isoformat(),
+                               next_date=(selected_date + timedelta(days=1)).isoformat())
+
+    except Exception as e:
+        app.logger.error(f"Error in meal_planner: {str(e)}")
+        flash('Произошла ошибка при загрузке планировщика питания', 'error')
+        return redirect(url_for('index'))
+    finally:
+        db_sess.close()
+
+
+@app.route('/generate_plan', methods=['POST'])
+@login_required
+def generate_plan():
+    selected_date_str = request.form.get('date', date.today().isoformat())
+    try:
+        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        selected_date = date.today()
+
+    if generate_meal_plan_for_user(current_user.id, selected_date):
+        flash('План питания успешно сгенерирован!', 'success')
+    else:
+        flash('Ошибка при генерации плана питания', 'error')
+
+    return redirect(url_for('meal_planner', date=selected_date.isoformat()))
+
+
+@app.route('/add_meal', methods=['POST'])
+@login_required
+def add_meal():
+    db_sess = db_session.create_session()
+
+    try:
+        meal_plan = MealPlan(
+            user_id=current_user.id,
+            date=datetime.strptime(request.form['date'], '%Y-%m-%d').date(),
+            meal_type=request.form['meal_type'],
+            food_name=request.form['food_name'],
+            calories=float(request.form['calories']),
+            protein=float(request.form.get('protein', 0)),
+            carbs=float(request.form.get('carbs', 0)),
+            fat=float(request.form.get('fat', 0))
+        )
+
+        db_sess.add(meal_plan)
+        db_sess.commit()
+        flash('Блюдо успешно добавлено!', 'success')
+
+    except Exception as e:
+        db_sess.rollback()
+        flash('Ошибка при добавлении блюда', 'error')
+        app.logger.error(f"Error adding meal: {str(e)}")
+    finally:
+        db_sess.close()
+
+    return redirect(url_for('meal_planner', date=request.form['date']))
+
+
+@app.route('/delete_meal/<int:meal_id>', methods=['POST'])
+@login_required
+def delete_meal(meal_id):
+    db_sess = db_session.create_session()
+
+    try:
+        meal = db_sess.query(MealPlan).filter(
+            MealPlan.id == meal_id,
+            MealPlan.user_id == current_user.id
+        ).first()
+
+        if meal:
+            meal_date = meal.date
+            db_sess.delete(meal)
+            db_sess.commit()
+            flash('Блюдо удалено', 'success')
+            return redirect(url_for('meal_planner', date=meal_date.isoformat()))
+        else:
+            flash('Блюдо не найдено', 'error')
+
+    except Exception as e:
+        db_sess.rollback()
+        flash('Ошибка при удалении блюда', 'error')
+        app.logger.error(f"Error deleting meal: {str(e)}")
+    finally:
+        db_sess.close()
+
+    return redirect(url_for('meal_planner'))
 
 
 @app.route('/nutrition_analysis')
