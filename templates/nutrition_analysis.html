@@ -3,9 +3,9 @@
 {% block title %}Анализ рациона - NutriPlan{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-9 p-4">
+<div class="container-fluid px-0">  <!-- Добавил px-0 чтобы убрать горизонтальные отступы -->
+    <div class="row mx-0">  <!-- Добавил mx-0 чтобы убрать внешние отступы строки -->
+        <div class="col-12 p-4">  <!-- Заменил col-md-9 на col-12 для полной ширины -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Анализ рациона</h2>
                 <div>
@@ -13,7 +13,7 @@
                            onchange="window.location.href='{{ url_for('nutrition_analysis') }}'">
                 </div>
             </div>
-            
+
             <!-- Калькулятор калорий -->
             <div class="row mb-4">
                 <div class="col-12">
@@ -29,7 +29,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Статистика дня -->
             <div class="row mb-4">
                 <div class="col-md-3">
@@ -44,7 +44,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-3">
                     <div class="card stats-card">
                         <div class="card-body text-center">
@@ -53,7 +53,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-3">
                     <div class="card stats-card">
                         <div class="card-body text-center">
@@ -62,7 +62,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-3">
                     <div class="card stats-card">
                         <div class="card-body text-center">
@@ -72,7 +72,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Визуализация и записи -->
             <div class="row">
                 <div class="col-md-6">
@@ -85,7 +85,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
@@ -113,7 +113,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Рекомендации -->
             <div class="row mt-4">
                 <div class="col-12">
@@ -126,13 +126,13 @@
                             {% if calorie_diff > 200 %}
                                 <div class="alert alert-warning">
                                     <i class="fas fa-exclamation-triangle"></i>
-                                    <strong>Превышение калорий:</strong> Вы превысили дневную норму на {{ "%.0f"|format(calorie_diff) }} ккал. 
+                                    <strong>Превышение калорий:</strong> Вы превысили дневную норму на {{ "%.0f"|format(calorie_diff) }} ккал.
                                     Рекомендуется увеличить физическую активность или скорректировать рацион на завтра.
                                 </div>
                             {% elif calorie_diff < -200 %}
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>Недостаток калорий:</strong> До дневной нормы не хватает {{ "%.0f"|format(-calorie_diff) }} ккал. 
+                                    <strong>Недостаток калорий:</strong> До дневной нормы не хватает {{ "%.0f"|format(-calorie_diff) }} ккал.
                                     Добавьте полезный перекус или увеличьте порции основных приемов пищи.
                                 </div>
                             {% else %}
@@ -141,11 +141,11 @@
                                     <strong>Отличный баланс!</strong> Ваш рацион соответствует дневной норме калорий.
                                 </div>
                             {% endif %}
-                            
+
                             {% if total_protein < 50 %}
                                 <div class="alert alert-warning">
                                     <i class="fas fa-exclamation-triangle"></i>
-                                    <strong>Недостаток белка:</strong> Рекомендуется добавить в рацион больше белковых продуктов 
+                                    <strong>Недостаток белка:</strong> Рекомендуется добавить в рацион больше белковых продуктов
                                     (мясо, рыба, яйца, бобовые, творог).
                                 </div>
                             {% endif %}
@@ -171,7 +171,7 @@
                         <label for="food_name" class="form-label">Название продукта/блюда</label>
                         <input type="text" class="form-control" name="food_name" required>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="meal_type" class="form-label">Прием пищи</label>
                         <select class="form-select" name="meal_type" required>
@@ -181,7 +181,7 @@
                             <option value="snack">Перекус</option>
                         </select>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -196,7 +196,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
