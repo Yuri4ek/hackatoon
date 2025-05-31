@@ -28,9 +28,11 @@ app.config["SECRET_KEY"] = "secret-key"
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-def answer_bennedict(user): #Подсчет калорий
+
+def answer_bennedict(user):  # Подсчет калорий
     try:
-        bmr = 88.36 + (13.4 * user.weight) + (4.8 * user.height) - (5.7 * user.age) if user.gender == 'мужчина' else 447.6 + (9.2 * user.weight) + (
+        bmr = 88.36 + (13.4 * user.weight) + (4.8 * user.height) - (
+                5.7 * user.age) if user.gender == 'мужчина' else 447.6 + (9.2 * user.weight) + (
                 3.1 * user.height) - (4.3 * user.age)
         activityes = {
             'сидячий образ жизни': 1.2,
@@ -47,6 +49,7 @@ def answer_bennedict(user): #Подсчет калорий
         return bmr
     except Exception as e:
         app.logger.error(f"Error in answer_bennedict: {str(e)}")
+
 
 @app.context_processor
 def utility_processor():
@@ -337,7 +340,7 @@ def nutrition_data():
     db_sess = db_session.create_session()
 
     entries = db_sess.query(
-            FoodEntry).filter(
+        FoodEntry).filter(
         FoodEntry.user_id == current_user.id,
         FoodEntry.date >= start_date,
         FoodEntry.date <= end_date
@@ -357,18 +360,142 @@ def nutrition_data():
     return jsonify(daily_data)
 
 
+api_key = "NmU2ZTUyODAtNjRjYS00MzkwLWI0NjItNGZjNzBlNzQ1MzliOjNkNTBjNzk5LWEzMDgtNDZlZS04Mzg1LWY2N2M2NTc5NmRhNQ=="
+giga = GigaChat(
+    credentials=api_key,
+    scope="GIGACHAT_API_PERS",  # Для физлиц (альтернативы: GIGACHAT_API_B2B/CORP)
+    verify_ssl_certs=False  # Отключение проверки сертификатов (не рекомендуется для прода)
+)
+
+
+def get_days_diet(age, gender, weight, height, activity, goal, dietary):
+    text = f'''Составь рацион в виде 3 списка языка программирования python,
+            где внутри каждого списка есть несколько списков, 1 элемент этого списка - название блюда или еды
+            2 элемент - калорийность, 3 элемент - белки, 4 элемент - жиры, 5 элемент - углеводы
+            , рацион на день для человека с такими данными:
+            {age} лет, {gender}, вес {weight} кг, рост {height} см, {activity},
+            цель - {goal}, особенности: {dietary}
+            ВАЖНО СНИЗУ БУДЕТ ПРИМЕР, НАДО ВЫВОДИТЬ ТАКЖЕ
+            daily_menu = [
+            # Завтрак
+            [
+                "Овсяная каша",
+                160,
+                5.7,
+                4.8,
+                25.9
+            ],
+            [
+                "Яйцо вареное",
+                78,
+                6.3,
+                5.7,
+                0.6
+            ],
+            [
+                "Хлеб цельнозерновой",
+                121,
+                7.7,
+                1.2,
+                23.0
+            ],
+            
+            # Перекус
+            [
+                "Йогурт греческий",
+                66,
+                5.2,
+                2.0,
+                7.5
+            ],
+            
+            # Обед
+            [
+                "Куриная грудка",
+                165,
+                30.6,
+                3.6,
+                0.0
+            ],
+            [
+                "Рис",
+                130,
+                2.7,
+                0.5,
+                28.2
+            ],
+            [
+                "Салат из свежих овощей",
+                46,
+                1.7,
+                0.2,
+                9.6
+            ],
+            
+            # Полдник
+            [
+                "Творог нежирный",
+                88,
+                17.2,
+                1.8,
+                1.0
+            ],
+            
+            # Ужин
+            [
+                "Кальмар тушеный",
+                122,
+                22.1,
+                1.6,
+                1.1
+            ],
+            [
+                "Капуста брокколи",
+                34,
+                2.8,
+                0.4,
+                6.6
+            ]
+            ]
+            ВОТ ПОДОБНОЕ ТАКОМУ НЕЛЬЗЯ ПИСАТЬ
+        Пример рациона на день для мальчика 10 лет с весом 40 кг и ростом 140 см, ведущего сидячий образ жизни, при снижении веса. Рацион включает завтрак, перекус, обед, полдник и ужин.
+        '''
+    messages = [
+        Messages(role=MessagesRole.SYSTEM,
+                 content="Ты программа, которая выводит только список языка python, ничего другого,"
+                         " и знаешь БЖУ и калорийность всех продуктов питания"),
+        Messages(role=MessagesRole.USER, content=text)
+    ]
+
+    # Формируем запрос
+    chat = Chat(messages=messages)
+
+    response = giga.chat(chat)
+    return response.choices[0].message.content
+
+
 def get_ai_answer(text, age, gender, weight, height, activity, goal, dietary):
-    api_key = "NmU2ZTUyODAtNjRjYS00MzkwLWI0NjItNGZjNzBlNzQ1MzliOjNkNTBjNzk5LWEzMDgtNDZlZS04Mzg1LWY2N2M2NTc5NmRhNQ=="
+    db_sess = db_session.create_session()
+    last_messages = db_sess.query(User_Query).filter(User_Query.user_id == current_user.id).all()
 
-    text += f", {age} лет, {gender}, вес {weight} кг, рост {height} см, {activity}, цель - {goal}, противопоказания: {dietary}, пиши кратко, только то, что спросили"
+    text += (f"\nДанные пользователя, которые надо учитывать и не противоречить им:\n"
+             f"{age} лет, {gender}, вес {weight} кг, рост {height} см, {activity}, "
+             f"цель - {goal}, особенности: {dietary}\n"
+             f"Важно напиши ответ до 100 слов.")
 
-    giga = GigaChat(
-        credentials=api_key,
-        scope="GIGACHAT_API_PERS",  # Для физлиц (альтернативы: GIGACHAT_API_B2B/CORP)
-        verify_ssl_certs=False  # Отключение проверки сертификатов (не рекомендуется для прода)
-    )
+    # Создаем историю сообщений
+    messages = [
+        Messages(role=MessagesRole.SYSTEM, content="Ты ассистент по ЗОЖ")
+    ]
+    for last_message in last_messages:
+        messages.append(Messages(role=MessagesRole.USER, content=last_message.message))
+        messages.append(Messages(role=MessagesRole.ASSISTANT, content=last_message.response))
+    messages.append(Messages(role=MessagesRole.USER, content=text))
 
-    response = giga.chat(text)
+    # Формируем запрос
+    chat = Chat(messages=messages)
+
+    response = giga.chat(chat)
     return response.choices[0].message.content
 
 
@@ -477,4 +604,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    print(get_days_diet(10, "мужчина", 40, 140, "сидячий образ жизни", "похудение",
+                        "нет"))
